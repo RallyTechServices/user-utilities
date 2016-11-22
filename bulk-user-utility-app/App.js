@@ -3,11 +3,18 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
     componentCls: 'app',
 
     launch: function() {
-        this._addBoxes();
+        CA.technicalservices.userutilities.ProjectUtility.initialize().then({
+            success: function(){
+                this._addBoxes();
 
-        this._addSelectorComponents();
+                this._addSelectorComponents();
 
-        this.buildGrid();
+                this.buildGrid();
+            },
+            failure: this.showErrorNotification,
+            scope: this
+        });
+
     },
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
@@ -75,7 +82,7 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
                 return {
                     property: field,
                     value: i
-                }
+                };
             });
             filters = Rally.data.wsapi.Filter.or(filters);
         }

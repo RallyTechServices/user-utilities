@@ -64,8 +64,8 @@ Ext.define('CA.technicalservices.userutilities.FieldPicker', {
             var msg = "Please update the CA.technicalservices.FieldPicker configuration with modelNames and context";
             this.toolTipConfig= {
                 html: '<div style="color:red;">' + msg + '</div>'
-            }
-            this.on('click', function(){ Rally.ui.notify.Notifier.showError({message: msg})})
+            };
+            this.on('click', function(){ Rally.ui.notify.Notifier.showError({message: msg}); });
         }
         this.callParent(arguments);
     },

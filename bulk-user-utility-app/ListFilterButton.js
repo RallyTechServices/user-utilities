@@ -95,6 +95,7 @@ Ext.define('CA.technicalservices.userutilities.UserListFilterButton', {
             this.userListPanel = Ext.widget({
                 xtype: 'listfilterpanel',
                 context: this.context,
+                collapsed: true,
                 flex: 1
             });
             this.relayedEvents = this.relayEvents(this.userListPanel, ['expand', 'collapse', 'listitemsupdated','panelresize', 'parametersupdated']);

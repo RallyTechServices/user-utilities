@@ -1,5 +1,5 @@
-Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
-    alias: 'widget.assignpermissionsbulkmenuitem',
+Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
+    alias: 'widget.removepermissionsbulkmenuitem',
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
@@ -7,30 +7,28 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
 //            console.log('onbeforeaction');
         },
 
-        text: 'Assign Permissions...',
+        text: 'Remove Permissions...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',{});
-            dialog.on('updated', this.assignPermissions, this);
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.RemovePermissions',{});
+            dialog.on('updated', this.removePermissions, this);
         },
         predicate: function (records) {
             return _.every(records, function (record) {
                 return record;
             });
-
         },
-        assignPermissions: function(dlg, selectionCache){
+        removePermissions: function(dlg, selectionCache){
             var successfulRecords = this.records,
                 unsuccessfulRecords = [];
 
-            console.log('assignPermissions', selectionCache);
             var promises = [];
             Ext.Array.each(this.records, function(r){
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
-                    var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
+                    var permission = "No Access";
                     promises.push(
-                        function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
+                        function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, true); });
                 });
             });
 
@@ -51,7 +49,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                                 }
                             }
                             idx++;
-
                         });
                         if (!success){
                             unsuccessfulRecords.push(user);
@@ -59,10 +56,9 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                             successfulRecords.push(user);
                         }
                     });
-                    console.log('unsuccessful', errorMessages, unsuccessfulRecords, successfulRecords)
+
                     this.onActionComplete(successfulRecords, unsuccessfulRecords);
                     if (errorMessages.length > 0){
-                        console.log('errormessages', errorMessages);
                         Rally.ui.notify.Notifier.showError({message: errorMessages.join(',')});
                     }
                 },

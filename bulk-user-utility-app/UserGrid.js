@@ -14,13 +14,20 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         ],
         margin: 10,
         storeConfig: {
-            model: 'User'
+            model: 'User',
+            pageSize: 200
         },
         enableBulkEdit: true,
         bulkEditConfig: {
             items: [{
                 xtype: 'assignpermissionsbulkmenuitem'
+            },{
+                xtype: 'removepermissionsbulkmenuitem'
             }]
+        },
+        showPagingToolbar: true,
+        pagingToolbarCfg: {
+            pageSizes: [200, 1000, 1500, 2000]
         }
     },
     constructor: function(config) {
