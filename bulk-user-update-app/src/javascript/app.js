@@ -1,8 +1,27 @@
-Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
+Ext.define("bulk-user-update-app", {
     extend: 'Rally.app.App',
     componentCls: 'app',
+    logger: new Rally.technicalservices.Logger(),
+    defaults: { margin: 10 },
+
+    integrationHeaders : {
+        name : "bulk-user-update-app"
+    },
 
     launch: function() {
+        this.allowedWorkspaces = this._checkUserPermissions();
+        this.logger.log('launch UserPermissions', this.allowedWorkspaces);
+
+        if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
+            this.addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
+            return;
+        }
+
+        if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
+            this.addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
+            return;
+        }
+
         CA.technicalservices.userutilities.ProjectUtility.initialize().then({
             success: function(){
                 this._addBoxes();
@@ -15,6 +34,26 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
             scope: this
         });
 
+    },
+    addMessageToApp: function(message){
+        this.removeAll();
+        var ct = this.add({
+            xtype: 'container',
+            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
+        });
+    },
+    _checkUserPermissions: function(){
+        this.logger.log('_loadUserPermissions', this.getContext().getPermissions());
+        var workspaces = [],
+            subAdmin = false;
+
+        Ext.Array.each(this.getContext().getPermissions().userPermissions, function(permission){
+            if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
+                subAdmin = (permission.Role === "Subscription Admin");
+                workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
+            }
+        });
+        return workspaces;
     },
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
@@ -65,7 +104,7 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
     },
     updateGridFilters: function(filter){
         console.log('updateGridFilters', filter);
-       // this._gridConfig.filters = filter.getTypesAndFilters();
+        // this._gridConfig.filters = filter.getTypesAndFilters();
         this.getSelectorBox().doLayout();
         this.buildGrid();
     },
@@ -87,7 +126,7 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
             filters = Rally.data.wsapi.Filter.or(filters);
         }
 
-       // var advancedFilters = this.down('rallyinlinefilterbutton').getWsapiFilter();
+        // var advancedFilters = this.down('rallyinlinefilterbutton').getWsapiFilter();
         var filterButton = this.down('rallyinlinefilterbutton');
         if (filterButton && filterButton.inlineFilterPanel && filterButton.getWsapiFilter()){
             console.log('advancedfilters', filterButton.getWsapiFilter(), filterButton.getFilters());
@@ -112,15 +151,16 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
                 filters: this.getFilters(),
                 enablePostGet: false
             },
-            listeners: {
-                beforeaction: function(){
-                    this.setLoading("Updating...");
-                },
-                actioncomplete: function(){
-                    this.setLoading(false);
-                },
-                scope: this
-            }
+            //listeners: {
+            //    beforeaction: function(){
+            //        this.setLoading("Updating...");
+            //    },
+            //    actioncomplete: function(){
+            //        this.setLoading(false);
+            //    },
+            //    scope: this
+            //}
+
         });
         this.getGridBox().add(grid);
     },
@@ -167,5 +207,23 @@ Ext.define('CA.technicalservices.userutilities.BulkUserUtilityApp', {
     },
     showErrorNotification: function(msg){
         Rally.ui.notify.Notifier.showError({message: msg });
+    },
+    getOptions: function() {
+        return [
+            {
+                text: 'About...',
+                handler: this._launchInfo,
+                scope: this
+            }
+        ];
+    },
+    
+    _launchInfo: function() {
+        if ( this.about_dialog ) { this.about_dialog.destroy(); }
+        this.about_dialog = Ext.create('Rally.technicalservices.InfoLink',{});
+    },
+    
+    isExternal: function(){
+        return typeof(this.getAppId()) == 'undefined';
     }
 });

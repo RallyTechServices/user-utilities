@@ -21,16 +21,10 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         bulkEditConfig: {
             items: [{
                 xtype: 'assignpermissionsbulkmenuitem',
-                //onBeforeAction: function(){
-                //    this.fireEvent('beforeaction');
-                //},
-                //onActionComplete: function(successfulRecords, unsuccessfulRecords){
-                //    console.log('onActionComplete', successfulRecords, unsuccessfulRecords);
-                //    this.fireEvent('actioncomplete');
-                //},
-                //scope: this
             },{
                 xtype: 'removepermissionsbulkmenuitem'
+            },{
+                xtype: 'teammembershipbulkmenuitem'
             }]
         },
         showPagingToolbar: true,

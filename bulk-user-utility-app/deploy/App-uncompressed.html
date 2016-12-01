@@ -1562,9 +1562,9 @@ Ext.define('Rally.data.wsapi.ProjectTreeStoreBuilder', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-        onBeforeAction: function(){
-//            console.log('onbeforeaction');
-        },
+//        onBeforeAction: function(){
+////            console.log('onbeforeaction');
+//        },
 
         text: 'Assign Permissions...',
 
@@ -1594,6 +1594,7 @@ Ext.define('Rally.data.wsapi.ProjectTreeStoreBuilder', {
             });
 
             var records = this.records;
+            console.log('promieses',promises.length);
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -1617,18 +1618,44 @@ Ext.define('Rally.data.wsapi.ProjectTreeStoreBuilder', {
                         } else {
                             successfulRecords.push(user);
                         }
+
                     });
-                    console.log('unsuccessful', errorMessages, unsuccessfulRecords, successfulRecords)
-                    this.onActionComplete(successfulRecords, unsuccessfulRecords);
+                    console.log('records', successfulRecords, unsuccessfulRecords);
+                    if (successfulRecords.length > 0){
+                        this.onSuccess(successfulRecords, unsuccessfulRecords,null,errorMessages);
+                    } else {
+                        if (errorMessages.length > 0){
+                            console.log('errormessages', errorMessages);
+                            Rally.ui.notify.Notifier.showError({message: "0 Users were updated:<br/>" + errorMessages.join('<br/>')});
+                        }
+                    }
+                    //this.onActionComplete(successfulRecords, unsuccessfulRecords);
                     if (errorMessages.length > 0){
                         console.log('errormessages', errorMessages);
                         Rally.ui.notify.Notifier.showError({message: errorMessages.join(',')});
                     }
+
                 },
                 scope: this
             });
 
 
+        },
+        onSuccess: function (successfulRecords, unsuccessfulRecords, args, errorMessage) {
+
+            var message = successfulRecords.length + (successfulRecords.length === 1 ? ' user has been updated' : ' users have been updated');
+
+            if(successfulRecords.length === this.records.length) {
+                Rally.ui.notify.Notifier.show({
+                    message: message + '.'
+                });
+            } else {
+                Rally.ui.notify.Notifier.showWarning({
+                    message: message + ', but ' + unsuccessfulRecords.length + ' failed: ' + errorMessage
+                });
+            }
+
+            Ext.callback(this.onActionComplete, null, [successfulRecords, unsuccessfulRecords]);
         }
     }
 });
@@ -1725,7 +1752,15 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         enableBulkEdit: true,
         bulkEditConfig: {
             items: [{
-                xtype: 'assignpermissionsbulkmenuitem'
+                xtype: 'assignpermissionsbulkmenuitem',
+                //onBeforeAction: function(){
+                //    this.fireEvent('beforeaction');
+                //},
+                //onActionComplete: function(successfulRecords, unsuccessfulRecords){
+                //    console.log('onActionComplete', successfulRecords, unsuccessfulRecords);
+                //    this.fireEvent('actioncomplete');
+                //},
+                //scope: this
             },{
                 xtype: 'removepermissionsbulkmenuitem'
             }]
@@ -1855,6 +1890,15 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
             storeConfig: {
                 filters: this.getFilters(),
                 enablePostGet: false
+            },
+            listeners: {
+                beforeaction: function(){
+                    this.setLoading("Updating...");
+                },
+                actioncomplete: function(){
+                    this.setLoading(false);
+                },
+                scope: this
             }
         });
         this.getGridBox().add(grid);

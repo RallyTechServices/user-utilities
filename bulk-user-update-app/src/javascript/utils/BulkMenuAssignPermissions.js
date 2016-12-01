@@ -14,13 +14,16 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             dialog.on('updated', this.assignPermissions, this);
         },
         predicate: function (records) {
+
             return _.every(records, function (record) {
+
                 return record;
             });
 
         },
+
         assignPermissions: function(dlg, selectionCache){
-            var successfulRecords = this.records,
+            var successfulRecords = [],
                 unsuccessfulRecords = [];
 
             console.log('assignPermissions', selectionCache);
@@ -35,7 +38,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             });
 
             var records = this.records;
-            console.log('promieses',promises.length, this.records.length);
+            console.log('promieses',promises.length, 'records',records);
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
