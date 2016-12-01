@@ -1,0 +1,5 @@
+{
+    "name": "Bulk User Update Utility",
+    "sdk": "2.1",
+    "className": "bulk-user-update-app"
+}

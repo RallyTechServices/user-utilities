@@ -1,0 +1,36 @@
+.app {
+     /* Add app styles here */
+}
+
+
+.permission-selected {
+    background-color: #00a9e0;
+    color: #fff;
+    padding: 1px 5px 1px 5px;
+    text-align:center;
+    font-size: 11px;
+    height: 15px;
+    border-color: #00a9e0;
+    border-radius: 2px;
+    cursor:pointer;
+}
+.permission-not-selected {
+    color: #00a9e0;
+    background-color: #fff;
+    padding: 0 5px 0 5px;
+    text-align:center;
+    border: solid;
+    border-width: 1px;
+    font-size: 11px;
+    height: 15px;
+    border-radius: 2px;
+    cursor:pointer;
+}
+.team-member-yes {
+    color: #3a874f;
+    cursor:pointer;
+}
+.team-member-no{
+    color: #888d8e;
+    cursor:pointer;
+}
