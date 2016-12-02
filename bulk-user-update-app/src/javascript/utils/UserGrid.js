@@ -15,7 +15,8 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         margin: 10,
         storeConfig: {
             model: 'User',
-            pageSize: 200
+            pageSize: 200,
+            fetch: ['WorkspacePermission','UserName','DisplayName']
         },
         enableBulkEdit: true,
         bulkEditConfig: {

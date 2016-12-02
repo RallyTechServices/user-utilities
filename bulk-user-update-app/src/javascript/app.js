@@ -9,20 +9,8 @@ Ext.define("bulk-user-update-app", {
     },
 
     launch: function() {
-        this.allowedWorkspaces = this._checkUserPermissions();
-        this.logger.log('launch UserPermissions', this.allowedWorkspaces);
 
-        if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
-            this.addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
-            return;
-        }
-
-        if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
-            this.addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
-            return;
-        }
-
-        CA.technicalservices.userutilities.ProjectUtility.initialize().then({
+        CA.technicalservices.userutilities.ProjectUtility.initialize(this.getContext()).then({
             success: function(){
                 this._addBoxes();
 
@@ -35,26 +23,7 @@ Ext.define("bulk-user-update-app", {
         });
 
     },
-    addMessageToApp: function(message){
-        this.removeAll();
-        var ct = this.add({
-            xtype: 'container',
-            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
-        });
-    },
-    _checkUserPermissions: function(){
-        this.logger.log('_loadUserPermissions', this.getContext().getPermissions());
-        var workspaces = [],
-            subAdmin = false;
 
-        Ext.Array.each(this.getContext().getPermissions().userPermissions, function(permission){
-            if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
-                subAdmin = (permission.Role === "Subscription Admin");
-                workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
-            }
-        });
-        return workspaces;
-    },
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
 
@@ -75,7 +44,7 @@ Ext.define("bulk-user-update-app", {
             margin: '10 5 10 5',
 
             stateful: true,
-            stateId: 'grid-filters-1',
+            stateId: 'grid-filters-3',
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: this.updateGridFilters,
@@ -94,6 +63,27 @@ Ext.define("bulk-user-update-app", {
             }
         });
 
+        this.getPermissionsFilterBox().add({
+            xtype: 'tsworkspacepermissionsearchfield',
+            fieldLabel: 'Show Users in Workspace',
+            labelWidth: 150,
+            width: 400,
+            listeners: {
+                filterusers: this.updateGridFilters,
+                scope: this
+            }
+        });
+        this.getPermissionsFilterBox().add({
+            xtype: 'tsprojectpermissionsearchfield',
+            fieldLabel: 'Show Users in Project',
+            labelWidth: 150,
+            width: 400,
+            listeners: {
+                filterusers: this.updateGridFilters,
+                scope: this
+            }
+        });
+
     },
     addListFilterPanel: function(panel){
         this.getListFilterBox().add(panel);
@@ -103,8 +93,6 @@ Ext.define("bulk-user-update-app", {
         this.getGrid().reconfigureWithColumns(fields);
     },
     updateGridFilters: function(filter){
-        console.log('updateGridFilters', filter);
-        // this._gridConfig.filters = filter.getTypesAndFilters();
         this.getSelectorBox().doLayout();
         this.buildGrid();
     },
@@ -137,6 +125,27 @@ Ext.define("bulk-user-update-app", {
             }
 
         }
+
+        var workspacePermissionsFilter = this.down('tsworkspacepermissionsearchfield');
+        this.logger.log('getFilters workspacePermissionsFilter', workspacePermissionsFilter, workspacePermissionsFilter && workspacePermissionsFilter.getFilters());
+        if (workspacePermissionsFilter && workspacePermissionsFilter.getFilters()){
+            if (filters){
+                filters = filters.and(workspacePermissionsFilter.getFilters());
+            } else {
+                filters = workspacePermissionsFilter.getFilters();
+            }
+        }
+
+        var projectPermissionsFilter = this.down('tsprojectpermissionsearchfield');
+        this.logger.log('getFilters projectPermissionsFilter', projectPermissionsFilter, projectPermissionsFilter && projectPermissionsFilter.getFilters());
+        if (projectPermissionsFilter && projectPermissionsFilter.getFilters()){
+            if (filters){
+                filters = filters.and(projectPermissionsFilter.getFilters());
+            } else {
+                filters = projectPermissionsFilter.getFilters();
+            }
+        }
+
         return filters || [];
     },
     addInlineFilterPanel: function(panel){
@@ -149,28 +158,34 @@ Ext.define("bulk-user-update-app", {
             columnCfgs: this.down('fieldpickerbutton').getFields() || undefined,
             storeConfig: {
                 filters: this.getFilters(),
-                enablePostGet: false
-            },
-            //listeners: {
-            //    beforeaction: function(){
-            //        this.setLoading("Updating...");
-            //    },
-            //    actioncomplete: function(){
-            //        this.setLoading(false);
-            //    },
-            //    scope: this
-            //}
-
+                enablePostGet: true
+            }
         });
         this.getGridBox().add(grid);
     },
     _addBoxes: function(){
         this.removeAll();
 
+        //if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
+        //    this._addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
+        //    return;
+        //}
+        //
+        //if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
+        //    this._addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
+        //    return;
+        //}
+
         this.add({
             xtype: 'container',
             itemId: 'selectorBox',
             layout: 'hbox'
+        });
+        this.add({
+            xtype:'container',
+            itemId: 'permissionsFilterBox',
+            layout: 'hbox'
+
         });
 
         this.add({
@@ -190,6 +205,13 @@ Ext.define("bulk-user-update-app", {
             itemId: 'gridBox'
         });
     },
+    _addMessageToApp: function(message){
+        this.removeAll();
+        var ct = this.add({
+            xtype: 'container',
+            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
+        });
+    },
     getGrid: function(){
         return this.down('rallygrid');
     },
@@ -198,6 +220,9 @@ Ext.define("bulk-user-update-app", {
     },
     getSelectorBox: function(){
         return this.down('#selectorBox');
+    },
+    getPermissionsFilterBox: function(){
+        return this.down('#permissionsFilterBox');
     },
     getListFilterBox: function(){
         return this.down('#listFilterBox');

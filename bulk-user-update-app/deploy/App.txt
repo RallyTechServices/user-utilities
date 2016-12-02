@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Nov 30 2016 21:06:02 GMT-0700 (MST) -->
+    <!--  Build Date: Thu Dec 01 2016 21:38:43 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Nov 30 2016 21:06:02 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Thu Dec 01 2016 21:38:43 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 79547202306;
+        var CHECKSUM = 130886234960;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -21,10 +21,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-//        onBeforeAction: function(){
-////            console.log('onbeforeaction');
-//        },
-
         text: 'Assign Permissions...',
 
         handler: function () {
@@ -32,31 +28,27 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             dialog.on('updated', this.assignPermissions, this);
         },
         predicate: function (records) {
-
-            return _.every(records, function (record) {
-
-                return record;
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
-
         },
 
         assignPermissions: function(dlg, selectionCache){
             var successfulRecords = [],
                 unsuccessfulRecords = [];
 
-            console.log('assignPermissions', selectionCache);
             var promises = [];
             Ext.Array.each(this.records, function(r){
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
                     var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                    promises.push(
-                        function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
+                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
                 });
             });
 
             var records = this.records;
-            console.log('promieses',promises.length, 'records',records);
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -126,10 +118,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-        onBeforeAction: function(){
-//            console.log('onbeforeaction');
-        },
-
         text: 'Remove Permissions...',
 
         handler: function () {
@@ -137,9 +125,12 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
             dialog.on('updated', this.removePermissions, this);
         },
         predicate: function (records) {
-            return _.every(records, function (record) {
-                return record;
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
+
         },
         removePermissions: function(dlg, selectionCache){
             var successfulRecords = this.records,
@@ -213,19 +204,18 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-        onBeforeAction: function(){
-//            console.log('onbeforeaction');
-        },
-
-        text: 'Remove Permissions...',
+        text: 'Assign Team Membership...',
 
         handler: function () {
             var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{});
             dialog.on('updated', this.updateTeamMembership, this);
         },
         predicate: function (records) {
-            return _.every(records, function (record) {
-                return record;
+
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
         },
         updateTeamMembership: function(dlg, selectionCache){
@@ -838,14 +828,105 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         __permissionViewer: 'Viewer',
         __permissionNoAccess: 'No Access'
     },
-    initialize: function(){
+    initialize: function(context){
+        var deferred = Ext.create('Deft.Deferred');
+
+        var promises = [
+            CA.technicalservices.userutilities.ProjectUtility.fetchProjectsInWorkspace(context.getWorkspace().ObjectID),
+            CA.technicalservices.userutilities.ProjectUtility.fetchWorkspacesInSubscription()
+        ];
+
+        CA.technicalservices.userutilities.ProjectUtility._parsePermissions(context);
+
+        Deft.Promise.all(promises).then({
+            success: function(results){
+                CA.technicalservices.userutilities.ProjectUtility.initializeRecords(results[0]);
+                CA.technicalservices.userutilities.ProjectUtility.allWorkspaces = results[1];
+                deferred.resolve();
+            },
+            failure: function(msg){
+                deferred.reject(msg);
+            }
+        });
+        return deferred;
+    },
+    getAllWorkspaces: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.allWorkspaces;
+    },
+    getAllProjects: function(){
+        //in current workspace
+        return Ext.Object.getValues(CA.technicalservices.userutilities.ProjectUtility.projectHash);
+    },
+    getAllowedWorkspaces: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces;
+    },
+    getCurrentWorkspace: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.currentWorkspace;
+    },
+    hasAssignUserPermissions: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.hasPrivileges;
+    },
+    _parsePermissions: function(context){
+
+        var workspaces = [],
+            subAdmin = false,
+            permissions = context.getPermissions().userPermissions;
+
+        Ext.Array.each(permissions, function(permission){
+            if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
+                subAdmin = (permission.Role === "Subscription Admin");
+                workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
+            }
+        });
+        CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces = workspaces;
+        CA.technicalservices.userutilities.ProjectUtility.isSubAdmin = subAdmin;
+        CA.technicalservices.userutilities.ProjectUtility.currentWorkspace = context.getWorkspace().ObjectID;
+
+        //This could change based on how we decide who can do what
+        CA.technicalservices.userutilities.ProjectUtility.hasPrivileges = Ext.Array.contains(workspaces, context.getWorkspace().ObjectID);
+
+    },
+    fetchWorkspacesInSubscription: function(){
+        var deferred = Ext.create('Deft.Deferred');
+
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'Subscription',
+            fetch: ['Workspaces','ObjectID','Name','State'], //can fetch defect fields inline
+            pageSize: 1
+        }).load({
+            callback: function(records, operation){
+                if (operation.wasSuccessful()){
+                    var subscription = records[0];
+                    subscription.getCollection('Workspaces').load({
+                        fetch: ['ObjectID', 'Name', 'State'],
+                        filters: [{
+                            property: 'State',
+                            value: 'Open'
+                        }],
+                        callback: function(workspaces, operation) {
+                            if (operation.wasSuccessful()){
+                                workspaces = Ext.Array.map(workspaces, function(w){ return w.getData(); });
+                                deferred.resolve(workspaces);
+                            } else {
+                                deferred.resolve("Error fetching Workspace information: " + operation.error.errors.join(','));
+                            }
+                        }
+                    });
+                } else {
+                    deferred.resolve("Error fetching Subscription information: " + operation.error.errors.join(','));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+    fetchProjectsInWorkspace: function(workspaceOid){
         var deferred = Ext.create('Deft.Deferred');
 
         Ext.create('Rally.data.wsapi.Store',{
             model: 'Project',
             fetch: ['ObjectID','Name','Parent','Workspace'],
             limit: Infinity,
-            context: {project: null},
+            context: {workspace: '/workspace/' + workspaceOid, project: null},
             compact: false,
             filters: [{
                 property: 'State',
@@ -858,16 +939,13 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         }).load({
             callback: function(records, operation){
                 if (operation.wasSuccessful()){
-                    CA.technicalservices.userutilities.ProjectUtility.initializeRecords(records);
-                    deferred.resolve();
+                    deferred.resolve(records);
                 } else {
-                    deferred.reject("Error loading project structure: " + operation.error.errors.join(','));
+                    deferred.reject("Error loading project structure for workspace " + workspaceOid + ": " + operation.error.errors.join(','));
                 }
-            },
-            scope: this
+            }
         });
-
-        return deferred;
+        return deferred.promise;
     },
     initializeRecords: function(records){
         var hash = {},
@@ -919,8 +997,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
         var rootProjectData = CA.technicalservices.userutilities.ProjectUtility.getRootProjectData(projectOids,
             CA.technicalservices.userutilities.ProjectUtility.projectHash);
-
-        console.log('rootProjectData', rootProjectData);
 
         var promises = [],
             me = this;
@@ -1116,7 +1192,8 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         margin: 10,
         storeConfig: {
             model: 'User',
-            pageSize: 200
+            pageSize: 200,
+            fetch: ['WorkspacePermission','UserName','DisplayName']
         },
         enableBulkEdit: true,
         bulkEditConfig: {
@@ -1646,6 +1723,341 @@ Ext.define('CA.technicalservices.userutilities.dialog.TeamMembership', {
     }
 
 });
+Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
+    alias: 'widget.tsprojectpermissionsearchfield',
+    extend: 'Rally.ui.combobox.ComboBox',
+    requires: [
+        'Rally.data.wsapi.Filter'
+    ],
+
+    config: {
+        valueField: 'ObjectID',
+        displayField: 'Name',
+        emptyText: "Filter users with permissions in Project",
+        labelAlign: 'right',
+        allowNoEntry: true,
+        width: 300
+    },
+    allowBlank: true,
+
+    constructor: function(config) {
+
+        this.mergeConfig(config);
+
+        this.store = Ext.create('Ext.data.Store', {
+            fields: [this.valueField, this.displayField],
+            data: data = _.sortBy(
+                Ext.Array.map(CA.technicalservices.userutilities.ProjectUtility.getAllProjects(), function(w){
+                    return {
+                        ObjectID: w.ObjectID,
+                        Name: w.Name
+                    };
+                }),
+                'Name'
+            )
+        });
+        return this.callParent([this.config]);
+    },
+    initComponent: function(){
+        this.callParent(arguments);
+        this.on('select', this.fetchFilters, this );
+    },
+    fetchFilters: function(){
+
+        var rec = this.getRecord(),
+            workspace = CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace(),
+            projectID = this.getValue();
+
+        //Ext.create('Rally.data.wsapi.Store', {
+        //    model: 'ProjectPermission',
+        //    fetch: ['Name','Role','User','ObjectID','Workspace','Project'],
+        //    filters: [{
+        //        property: 'Workspace.ObjectID',
+        //        value: workspace
+        //    }]
+        //}).load({
+        //    callback: function(records, operation){
+        //        var filters = [];
+        //        Ext.Array.each(records, function(r){
+        //            console.log('r', r.get('Project'), r.get('Role'), r.get('User')._refObjectName);
+        //            if (r.get('Project') && r.get('Project').ObjectID === projectID){
+        //                filters.push({
+        //                    property: 'ObjectID',
+        //                    value: r.get('User').ObjectID
+        //                });
+        //            }
+        //        });
+        //        this.filters = Rally.data.wsapi.Filter.or(filters);
+        //        this.fireEvent('filterusers',filters);
+        //    },
+        //    scope: this
+        //});
+
+        var promises = [
+            this._fetchProjectPermissions(workspace),
+           // this._fetchWorkspaceAdmins(workspace)
+        ];
+
+        Deft.Promise.all(promises).then({
+            success: function(results){
+                var permissions = _.flatten(results);
+
+                var filters = [{
+                    property: "SubscriptionPermission",
+                    value: "Subscription Admin"
+                },{ //note this is for current workspace only
+                    property: "WorkspacePermission",
+                    value: "Workspace Admin"
+                }];
+
+                Ext.Array.each(permissions, function(r){
+                    console.log('r', r.get('_type'), r.get('Role'), r.get('User')._refObjectName);
+                    if ((r.get('Project') && r.get('Project').ObjectID === projectID) ||
+                       // (r.get('_type') === "workspacepermission" && r.get('Role') === "Admin") ||
+                         r.get('_type') === "user"){
+                        filters.push({
+                            property: 'ObjectID',
+                            value: r.get('User').ObjectID
+                        });
+                    }
+                });
+
+                if (filters.length > 1){
+                    filters = Rally.data.wsapi.Filter.or(filters);
+                }
+                this.filters = filters;
+                this.fireEvent('filterusers',filters);
+            },
+            scope: this
+        });
+
+    },
+    getFilters: function(){
+        console.log('getFilters', this.filters && this.filters.toString());
+        return this.filters || null;
+    },
+    _fetchProjectPermissions: function(workspace){
+        var deferred = Ext.create('Deft.Deferred');
+
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'ProjectPermission',
+            fetch: ['Name','Role','User','ObjectID','Workspace','Project'],
+            filters: [{
+                property: 'Workspace.ObjectID',
+                value: workspace
+            }]
+        }).load({
+            callback: function(records, operation){
+                deferred.resolve(records);
+            },
+            scope: this
+        });
+        return deferred.promise;
+    }
+    //_fetchWorkspaceAdmins: function(workspace){
+    //    var deferred = Ext.create('Deft.Deferred');
+    //
+    //    Ext.create('Rally.data.wsapi.Store', {
+    //        model: 'WorkspacePermission',
+    //        fetch: ['Name','Role','User','ObjectID','Workspace'],
+    //        filters: [{
+    //            property: 'Workspace.ObjectID',
+    //            value: workspace
+    //        },{
+    //            property: 'Role',
+    //            value: 'Admin'
+    //        }]
+    //    }).load({
+    //        callback: function(records, operation){
+    //            console.log('_fetchWorkspaceAdmins', records);
+    //            deferred.resolve(records);
+    //        },
+    //        scope: this
+    //    });
+    //    return deferred.promise;
+    //}
+});
+Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInWorkspace', {
+    alias: 'widget.tsworkspacepermissionsearchfield',
+    extend: 'Rally.ui.combobox.ComboBox',
+
+    config: {
+        valueField: 'ObjectID',
+        displayField: 'Name',
+        emptyText: "Filter users with permissions in Workspace",
+        width: 300,
+        labelAlign: 'right',
+        allowNoEntry: true
+    },
+    allowBlank: true,
+
+    constructor: function(config) {
+
+        this.mergeConfig(config);
+
+        this.store = Ext.create('Ext.data.Store', {
+            fields: ['ObjectID','Name'],
+            data: _.sortBy(
+                Ext.Array.map(CA.technicalservices.userutilities.ProjectUtility.getAllWorkspaces(), function(w){
+                    return {
+                        ObjectID: w.ObjectID,
+                        Name: w.Name
+                    };
+                }),
+                'Name'
+            )
+        });
+
+        return this.callParent([this.config]);
+
+    },
+    initComponent: function(){
+        this.callParent(arguments);
+        this.on('select', this.fetchFilters, this );
+    },
+    fetchFilters: function(){
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'WorkspacePermission',
+            fetch: ['Name','Role','User','ObjectID','Workspace'],
+            filters: [{
+                property: 'Workspace.ObjectID',
+                value: this.getValue()
+            }]
+        }).load({
+            callback: function(records, operation){
+                var filters = [{
+                    property: "SubscriptionPermission",
+                    value: "Subscription Admin"
+                }];
+
+                Ext.Array.each(records, function(r){
+                    filters.push({ property: 'ObjectID',
+                        value: r.get('User').ObjectID
+                    });
+                });
+                if (filters.length > 1){
+                    filters = Rally.data.wsapi.Filter.or(filters);
+                }
+
+                this.filters = filters;
+                this.fireEvent('filterusers',filters);
+            },
+            scope: this
+        });
+    },
+    getFilters: function(){
+        console.log('getFilters', this.filters && this.filters.toString());
+        return this.filters || null;
+    }
+
+
+});
+//
+//Ext.override(Rally.ui.inlinefilter.InlineFilterButton,{
+//    getUserPermissionInWorkspace: function() {
+//        return this.inlineFilterPanel.getUserPermissionInWorkspace();
+//    }
+//});
+//
+//Ext.override(Rally.ui.inlinefilter.InlineFilterPanel,{
+//    getUserPermissionInWorkspace: function() {
+//        return this.quickFilterPanel.getUserPermissionInWorkspace();
+//    }
+//});
+//
+//Ext.override(Rally.ui.inlinefilter.InlineFilterButton,{
+//    getUserPermissionInProject: function() {
+//        return this.inlineFilterPanel.getUserPermissionInProject();
+//    }
+//});
+//
+//Ext.override(Rally.ui.inlinefilter.InlineFilterPanel,{
+//    getUserPermissionInProject: function() {
+//        return this.quickFilterPanel.getUserPermissionInProject();
+//    }
+//});
+//
+//Ext.override(Rally.ui.inlinefilter.FilterFieldFactory, {
+//    UserPermissionInWorkspace: {
+//        xtype: 'tsworkspacepermissionsearchfield',
+//        allowNoEntry: false,
+//        width: 300
+//    },
+//    UserPermissionInProject: {
+//        xtype: 'tsprojectpermissionsearchfield',
+//        allowNoEntry: false
+//    }
+//});
+//
+//Ext.override(Rally.ui.inlinefilter.QuickFilterPanel,{
+//    getUserPermissionInWorkspace: function() {
+//        var modelTypePicker = _.find(this.fields, {name: 'UserPermissionInWorkspace'});
+//        return modelTypePicker ? modelTypePicker.getValue() : [];
+//    },
+//    getUserPermissionInProject: function() {
+//        var modelTypePicker = _.find(this.fields, {name: 'UserPermissionInProject'});
+//        return modelTypePicker ? modelTypePicker.getValue() : [];
+//    },
+//    _onAddQuickFilterClick: function() {
+//        var addQuickFilterConfig = Ext.clone(this.addQuickFilterConfig);
+//        var blackList =  _.map(this.fields, 'name');
+//
+//        if (addQuickFilterConfig && addQuickFilterConfig.whiteListFields) {
+//            addQuickFilterConfig.whiteListFields = _.reject(this.addQuickFilterConfig.whiteListFields, function(field){
+//                return _.contains(blackList, field);
+//            });
+//        }
+//        // break out additional fields so they can be configured
+//        var additionalFields = [
+//            {
+//                name: 'UserPermissionInWorkspace',
+//                displayName: 'Has Permissions in Workspace'
+//            },{
+//                name: 'UserPermissionInProject',
+//                displayName: 'Has Permissions in Project'
+//            }
+//        ];
+//        if (addQuickFilterConfig && addQuickFilterConfig.additionalFields) {
+//            additionalFields = _.reject(this.additionalFields, function(field){
+//                return _.contains(blackList, field.name);
+//            });
+//        }
+//
+//        this.addQuickFilterPopover = Ext.create('Rally.ui.popover.FieldPopover', {
+//            target: this.addQuickFilterButton.getEl(),
+//            placement: ['bottom', 'top', 'left', 'right'],
+//            fieldComboBoxConfig: _.merge({
+//                model: this.model,
+//                context: this.context,
+//                emptyText: 'Search filters...',
+//                additionalFields: additionalFields,
+//                blackListFields: blackList,
+//                listeners: {
+//                    select: function(field, value) {
+//                        var fieldSelected = value[0].raw;
+//                        this.recordAction({
+//                            description: 'quick filter added',
+//                            miscData: {
+//                                field: fieldSelected.name || fieldSelected
+//                            }
+//                        });
+//                        this.addQuickFilterPopover.close();
+//                        console.log('inside listener');
+//                        this._onAddQuickFilterSelect(fieldSelected);
+//                    },
+//                    destroy: function(){
+//                        delete this.addQuickFilterPopover;
+//                    },
+//                    scope: this
+//                }
+//            }, addQuickFilterConfig, function(a, b) {
+//                if (_.isArray(a)) {
+//                    return a.concat(b);
+//                }
+//            })
+//        });
+//    }
+//});
 Ext.define("bulk-user-update-app", {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -1657,20 +2069,8 @@ Ext.define("bulk-user-update-app", {
     },
 
     launch: function() {
-        this.allowedWorkspaces = this._checkUserPermissions();
-        this.logger.log('launch UserPermissions', this.allowedWorkspaces);
 
-        if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
-            this.addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
-            return;
-        }
-
-        if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
-            this.addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
-            return;
-        }
-
-        CA.technicalservices.userutilities.ProjectUtility.initialize().then({
+        CA.technicalservices.userutilities.ProjectUtility.initialize(this.getContext()).then({
             success: function(){
                 this._addBoxes();
 
@@ -1683,26 +2083,7 @@ Ext.define("bulk-user-update-app", {
         });
 
     },
-    addMessageToApp: function(message){
-        this.removeAll();
-        var ct = this.add({
-            xtype: 'container',
-            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
-        });
-    },
-    _checkUserPermissions: function(){
-        this.logger.log('_loadUserPermissions', this.getContext().getPermissions());
-        var workspaces = [],
-            subAdmin = false;
 
-        Ext.Array.each(this.getContext().getPermissions().userPermissions, function(permission){
-            if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
-                subAdmin = (permission.Role === "Subscription Admin");
-                workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
-            }
-        });
-        return workspaces;
-    },
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
 
@@ -1723,7 +2104,7 @@ Ext.define("bulk-user-update-app", {
             margin: '10 5 10 5',
 
             stateful: true,
-            stateId: 'grid-filters-1',
+            stateId: 'grid-filters-3',
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: this.updateGridFilters,
@@ -1742,6 +2123,27 @@ Ext.define("bulk-user-update-app", {
             }
         });
 
+        this.getPermissionsFilterBox().add({
+            xtype: 'tsworkspacepermissionsearchfield',
+            fieldLabel: 'Show Users in Workspace',
+            labelWidth: 150,
+            width: 400,
+            listeners: {
+                filterusers: this.updateGridFilters,
+                scope: this
+            }
+        });
+        this.getPermissionsFilterBox().add({
+            xtype: 'tsprojectpermissionsearchfield',
+            fieldLabel: 'Show Users in Project',
+            labelWidth: 150,
+            width: 400,
+            listeners: {
+                filterusers: this.updateGridFilters,
+                scope: this
+            }
+        });
+
     },
     addListFilterPanel: function(panel){
         this.getListFilterBox().add(panel);
@@ -1751,8 +2153,6 @@ Ext.define("bulk-user-update-app", {
         this.getGrid().reconfigureWithColumns(fields);
     },
     updateGridFilters: function(filter){
-        console.log('updateGridFilters', filter);
-        // this._gridConfig.filters = filter.getTypesAndFilters();
         this.getSelectorBox().doLayout();
         this.buildGrid();
     },
@@ -1785,6 +2185,27 @@ Ext.define("bulk-user-update-app", {
             }
 
         }
+
+        var workspacePermissionsFilter = this.down('tsworkspacepermissionsearchfield');
+        this.logger.log('getFilters workspacePermissionsFilter', workspacePermissionsFilter, workspacePermissionsFilter && workspacePermissionsFilter.getFilters());
+        if (workspacePermissionsFilter && workspacePermissionsFilter.getFilters()){
+            if (filters){
+                filters = filters.and(workspacePermissionsFilter.getFilters());
+            } else {
+                filters = workspacePermissionsFilter.getFilters();
+            }
+        }
+
+        var projectPermissionsFilter = this.down('tsprojectpermissionsearchfield');
+        this.logger.log('getFilters projectPermissionsFilter', projectPermissionsFilter, projectPermissionsFilter && projectPermissionsFilter.getFilters());
+        if (projectPermissionsFilter && projectPermissionsFilter.getFilters()){
+            if (filters){
+                filters = filters.and(projectPermissionsFilter.getFilters());
+            } else {
+                filters = projectPermissionsFilter.getFilters();
+            }
+        }
+
         return filters || [];
     },
     addInlineFilterPanel: function(panel){
@@ -1797,28 +2218,34 @@ Ext.define("bulk-user-update-app", {
             columnCfgs: this.down('fieldpickerbutton').getFields() || undefined,
             storeConfig: {
                 filters: this.getFilters(),
-                enablePostGet: false
-            },
-            //listeners: {
-            //    beforeaction: function(){
-            //        this.setLoading("Updating...");
-            //    },
-            //    actioncomplete: function(){
-            //        this.setLoading(false);
-            //    },
-            //    scope: this
-            //}
-
+                enablePostGet: true
+            }
         });
         this.getGridBox().add(grid);
     },
     _addBoxes: function(){
         this.removeAll();
 
+        //if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
+        //    this._addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
+        //    return;
+        //}
+        //
+        //if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
+        //    this._addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
+        //    return;
+        //}
+
         this.add({
             xtype: 'container',
             itemId: 'selectorBox',
             layout: 'hbox'
+        });
+        this.add({
+            xtype:'container',
+            itemId: 'permissionsFilterBox',
+            layout: 'hbox'
+
         });
 
         this.add({
@@ -1838,6 +2265,13 @@ Ext.define("bulk-user-update-app", {
             itemId: 'gridBox'
         });
     },
+    _addMessageToApp: function(message){
+        this.removeAll();
+        var ct = this.add({
+            xtype: 'container',
+            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
+        });
+    },
     getGrid: function(){
         return this.down('rallygrid');
     },
@@ -1846,6 +2280,9 @@ Ext.define("bulk-user-update-app", {
     },
     getSelectorBox: function(){
         return this.down('#selectorBox');
+    },
+    getPermissionsFilterBox: function(){
+        return this.down('#permissionsFilterBox');
     },
     getListFilterBox: function(){
         return this.down('#listFilterBox');

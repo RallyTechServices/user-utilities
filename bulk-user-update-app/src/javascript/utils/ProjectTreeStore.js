@@ -7,14 +7,105 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         __permissionViewer: 'Viewer',
         __permissionNoAccess: 'No Access'
     },
-    initialize: function(){
+    initialize: function(context){
+        var deferred = Ext.create('Deft.Deferred');
+
+        var promises = [
+            CA.technicalservices.userutilities.ProjectUtility.fetchProjectsInWorkspace(context.getWorkspace().ObjectID),
+            CA.technicalservices.userutilities.ProjectUtility.fetchWorkspacesInSubscription()
+        ];
+
+        CA.technicalservices.userutilities.ProjectUtility._parsePermissions(context);
+
+        Deft.Promise.all(promises).then({
+            success: function(results){
+                CA.technicalservices.userutilities.ProjectUtility.initializeRecords(results[0]);
+                CA.technicalservices.userutilities.ProjectUtility.allWorkspaces = results[1];
+                deferred.resolve();
+            },
+            failure: function(msg){
+                deferred.reject(msg);
+            }
+        });
+        return deferred;
+    },
+    getAllWorkspaces: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.allWorkspaces;
+    },
+    getAllProjects: function(){
+        //in current workspace
+        return Ext.Object.getValues(CA.technicalservices.userutilities.ProjectUtility.projectHash);
+    },
+    getAllowedWorkspaces: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces;
+    },
+    getCurrentWorkspace: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.currentWorkspace;
+    },
+    hasAssignUserPermissions: function(){
+        return CA.technicalservices.userutilities.ProjectUtility.hasPrivileges;
+    },
+    _parsePermissions: function(context){
+
+        var workspaces = [],
+            subAdmin = false,
+            permissions = context.getPermissions().userPermissions;
+
+        Ext.Array.each(permissions, function(permission){
+            if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
+                subAdmin = (permission.Role === "Subscription Admin");
+                workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
+            }
+        });
+        CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces = workspaces;
+        CA.technicalservices.userutilities.ProjectUtility.isSubAdmin = subAdmin;
+        CA.technicalservices.userutilities.ProjectUtility.currentWorkspace = context.getWorkspace().ObjectID;
+
+        //This could change based on how we decide who can do what
+        CA.technicalservices.userutilities.ProjectUtility.hasPrivileges = Ext.Array.contains(workspaces, context.getWorkspace().ObjectID);
+
+    },
+    fetchWorkspacesInSubscription: function(){
+        var deferred = Ext.create('Deft.Deferred');
+
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'Subscription',
+            fetch: ['Workspaces','ObjectID','Name','State'], //can fetch defect fields inline
+            pageSize: 1
+        }).load({
+            callback: function(records, operation){
+                if (operation.wasSuccessful()){
+                    var subscription = records[0];
+                    subscription.getCollection('Workspaces').load({
+                        fetch: ['ObjectID', 'Name', 'State'],
+                        filters: [{
+                            property: 'State',
+                            value: 'Open'
+                        }],
+                        callback: function(workspaces, operation) {
+                            if (operation.wasSuccessful()){
+                                workspaces = Ext.Array.map(workspaces, function(w){ return w.getData(); });
+                                deferred.resolve(workspaces);
+                            } else {
+                                deferred.resolve("Error fetching Workspace information: " + operation.error.errors.join(','));
+                            }
+                        }
+                    });
+                } else {
+                    deferred.resolve("Error fetching Subscription information: " + operation.error.errors.join(','));
+                }
+            }
+        });
+        return deferred.promise;
+    },
+    fetchProjectsInWorkspace: function(workspaceOid){
         var deferred = Ext.create('Deft.Deferred');
 
         Ext.create('Rally.data.wsapi.Store',{
             model: 'Project',
             fetch: ['ObjectID','Name','Parent','Workspace'],
             limit: Infinity,
-            context: {project: null},
+            context: {workspace: '/workspace/' + workspaceOid, project: null},
             compact: false,
             filters: [{
                 property: 'State',
@@ -27,16 +118,13 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         }).load({
             callback: function(records, operation){
                 if (operation.wasSuccessful()){
-                    CA.technicalservices.userutilities.ProjectUtility.initializeRecords(records);
-                    deferred.resolve();
+                    deferred.resolve(records);
                 } else {
-                    deferred.reject("Error loading project structure: " + operation.error.errors.join(','));
+                    deferred.reject("Error loading project structure for workspace " + workspaceOid + ": " + operation.error.errors.join(','));
                 }
-            },
-            scope: this
+            }
         });
-
-        return deferred;
+        return deferred.promise;
     },
     initializeRecords: function(records){
         var hash = {},
@@ -88,8 +176,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
         var rootProjectData = CA.technicalservices.userutilities.ProjectUtility.getRootProjectData(projectOids,
             CA.technicalservices.userutilities.ProjectUtility.projectHash);
-
-        console.log('rootProjectData', rootProjectData);
 
         var promises = [],
             me = this;

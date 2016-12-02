@@ -3,10 +3,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-//        onBeforeAction: function(){
-////            console.log('onbeforeaction');
-//        },
-
         text: 'Assign Permissions...',
 
         handler: function () {
@@ -14,31 +10,27 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             dialog.on('updated', this.assignPermissions, this);
         },
         predicate: function (records) {
-
-            return _.every(records, function (record) {
-
-                return record;
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
-
         },
 
         assignPermissions: function(dlg, selectionCache){
             var successfulRecords = [],
                 unsuccessfulRecords = [];
 
-            console.log('assignPermissions', selectionCache);
             var promises = [];
             Ext.Array.each(this.records, function(r){
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
                     var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                    promises.push(
-                        function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
+                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
                 });
             });
 
             var records = this.records;
-            console.log('promieses',promises.length, 'records',records);
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,

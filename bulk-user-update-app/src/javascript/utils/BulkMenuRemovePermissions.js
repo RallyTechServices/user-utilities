@@ -3,10 +3,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-        onBeforeAction: function(){
-//            console.log('onbeforeaction');
-        },
-
         text: 'Remove Permissions...',
 
         handler: function () {
@@ -14,9 +10,12 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
             dialog.on('updated', this.removePermissions, this);
         },
         predicate: function (records) {
-            return _.every(records, function (record) {
-                return record;
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
+
         },
         removePermissions: function(dlg, selectionCache){
             var successfulRecords = this.records,
