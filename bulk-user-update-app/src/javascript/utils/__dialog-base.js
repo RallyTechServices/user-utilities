@@ -152,6 +152,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 dataIndex: '__permissionViewer',
                 align: 'center',
                 renderer: function(v,m,r){
+                    console.log('record', r);
                     var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
                     return tpl.apply(v);
                 }
@@ -217,6 +218,13 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             this.projectGrid.destroy();
         }
         this.callParent(arguments);
+    },
+    toggleRenderer: function(v,m,r){
+        if (CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions(r.get('ObjectID'))){
+            var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
+            return tpl.apply(v);
+        }
+        return '';
     }
 
 

@@ -3,19 +3,18 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
     extend: 'Rally.ui.menu.bulk.MenuItem',
 
     config: {
-        onBeforeAction: function(){
-//            console.log('onbeforeaction');
-        },
-
-        text: 'Remove Permissions...',
+        text: 'Assign Team Membership...',
 
         handler: function () {
             var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{});
             dialog.on('updated', this.updateTeamMembership, this);
         },
         predicate: function (records) {
-            return _.every(records, function (record) {
-                return record;
+
+            var hasPermissions = CA.technicalservices.userutilities.ProjectUtility.hasAssignUserPermissions();
+            return _.every(records, function(record) {
+                return hasPermissions && record.get('WorkspacePermission') !== "Workspace Admin" &&
+                    record.get('WorkspacePermission') !== "Subscription Admin";
             });
         },
         updateTeamMembership: function(dlg, selectionCache){

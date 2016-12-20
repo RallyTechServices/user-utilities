@@ -16,10 +16,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.RemovePermissions', {
             text: 'Remove Access',
             dataIndex: '__permissionNone',
             align: 'center',
-            renderer: function (v, m, r) {
-                var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
-                return tpl.apply(v);
-            }
+            renderer: this.toggleRenderer
         }];
     }
 
