@@ -47,3 +47,23 @@
     color: #888d8e;
     cursor:pointer;
 }
+
+.view-permissions {
+    position: absolute;
+    border-left: 8px  solid #16a2e0;
+    border-radius: 0px;
+    box-shadow: none;
+    top:0px;
+    right: 0px!important;
+    width: 100px;
+}
+
+.x-resizable-over {
+    border-left: 12px  solid #16a2e0;
+    border-radius: 0px;
+    box-shadow: none;
+    top:0px;
+    right: 0px!important;
+    width: 100px;
+}
+.x-resizable-handle-west {}

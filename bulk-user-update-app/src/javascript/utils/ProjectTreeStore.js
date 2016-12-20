@@ -42,27 +42,47 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
     getCurrentWorkspace: function(){
         return CA.technicalservices.userutilities.ProjectUtility.currentWorkspace;
     },
-    hasAssignUserPermissions: function(){
-        return CA.technicalservices.userutilities.ProjectUtility.hasPrivileges;
+    hasAssignUserPermissions: function(projectOid){
+        //If the projectOid is missing, then we are just testing if the user can assign permissions.  If the allowedProjects is empty, then the user
+        //either doesn't have access or is a workspace admin for the current workspace.
+        if (!projectOid || CA.technicalservices.userutilities.ProjectUtility.allowedProjects.length === 0){
+            return CA.technicalservices.userutilities.ProjectUtility.hasPrivileges;
+        }
+
+        //If we get to this point, the user is a project admin
+        return Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedProjects, projectOid);
+
     },
     _parsePermissions: function(context){
 
         var workspaces = [],
+            projects = [],
             subAdmin = false,
-            permissions = context.getPermissions().userPermissions;
+            permissions = context.getPermissions().userPermissions,
+            currentWorkspaceOid = context.getWorkspace().ObjectID;
 
         Ext.Array.each(permissions, function(permission){
             if (permission.Role === "Subscription Admin" || permission.Role === "Workspace Admin"){
                 subAdmin = (permission.Role === "Subscription Admin");
                 workspaces.push(Rally.util.Ref.getOidFromRef(permission._ref));
             }
+
+            if (permission.Role === "ProjectAdmin"){
+                var wkspOid = Rally.util.Ref.getOidFromRef(permission.Workspace);
+                if (wkspOid === currentWorkspaceOid){
+                    var projectOid = Rally.util.Ref.getOidFromRef(permission._ref);
+                    projects.push(projectOid);
+                }
+            }
+            console.log('permissions', permission);
         });
         CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces = workspaces;
         CA.technicalservices.userutilities.ProjectUtility.isSubAdmin = subAdmin;
-        CA.technicalservices.userutilities.ProjectUtility.currentWorkspace = context.getWorkspace().ObjectID;
+        CA.technicalservices.userutilities.ProjectUtility.currentWorkspace = currentWorkspaceOid;
+        CA.technicalservices.userutilities.ProjectUtility.allowedProjects = projects;
 
         //This could change based on how we decide who can do what
-        CA.technicalservices.userutilities.ProjectUtility.hasPrivileges = Ext.Array.contains(workspaces, context.getWorkspace().ObjectID);
+        CA.technicalservices.userutilities.ProjectUtility.hasPrivileges = Ext.Array.contains(workspaces, context.getWorkspace().ObjectID) || projects.length > 0;
 
     },
     fetchWorkspacesInSubscription: function(){
@@ -352,5 +372,119 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
             }
         });
         return deferred.promise;
-    }
+    },
+    fetchUserPermissions: function(userRecord){
+        var deferred = Ext.create('Deft.Deferred');
+
+        var promises = [
+            CA.technicalservices.userutilities.ProjectUtility._fetchCollection(userRecord, 'UserPermissions'),
+            CA.technicalservices.userutilities.ProjectUtility._fetchCollection(userRecord, 'TeamMemberships')
+            ];
+
+        Deft.Promise.all(promises).then({
+            success: function(results){
+                var teamMembership = results[1],
+                    permissions = results[0],
+                    isWorkspaceAdmin = false,
+                    permissionsHash = {};
+
+                Ext.Array.each(permissions, function(p){
+                    var permissionRef = p.get('ObjectID'),
+                        permissionType = p.get('_type'),
+                        permissionRole = p.get('Role'),
+                        permissionInfo = permissionRef.split(/[^0-9]/);
+
+                    var containerOid = Number(permissionInfo[1]);
+
+                    //If we are a workspace admin for the current workspace, then we need not go further
+                    console.log('permissionType',permissionType,permissionRole,containerOid, CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace())
+                    if (permissionType === 'workspacepermission' && permissionRole === 'Admin' &&
+                        containerOid === CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace()){
+                        isWorkspaceAdmin = true;
+                        return false;
+                    }
+
+                    if (permissionType === 'projectpermission'){
+                        permissionsHash[containerOid] = {
+                            permission: permissionRole,
+                            teamMember: false
+                        }
+                    }
+                });
+
+                Ext.Array.each(teamMembership, function(p){
+                    var oid = p.get("ObjectID");
+                    if (!permissionsHash[oid]){
+                        permissionsHash[oid] = {
+                            permission: null
+                        }
+                    }
+                    permissionsHash[oid].teamMember = true;
+                });
+
+                if (isWorkspaceAdmin){
+                    deferred.resolve("User is a Workspace Administrator in the current workspace");
+                } else if (Ext.isEmpty(permissionsHash)){
+                    deferred.resolve("User has no Project Permissions in the current workspace");
+                } else  {
+                    //now put the projects into a tree...
+                    var data = CA.technicalservices.userutilities.ProjectUtility.getProjectTreeData();
+                    var store = Ext.create('Ext.data.TreeStore', {
+                        root: {
+                            children: data,
+                            expanded: true
+                        },
+                        model: 'CA.technicalservices.userutilities.ProjectModel'
+                    });
+
+                    var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
+                        removeNodes = [];
+
+                    store.getRootNode().cascadeBy(function(node){
+                        var oid = node.get('ObjectID');
+                        if (!Ext.Array.contains(projects, oid)){
+                            console.log('oid', oid, projects);
+                            removeNodes.push(node);
+                        } else {
+                            console.log('permissions oid', permissionsHash[oid]);
+                            if (permissionsHash[oid].teamMember){
+                                node.set('__teamMember', true);
+                            }
+                            if (permissionsHash[oid].permission === 'Viewer'){
+                                node.set('__permissionViewer', true);
+                            }
+                            if (permissionsHash[oid].permission === 'Editor'){
+                                node.set('__permissionEditor', true);
+                            }
+                            if (permissionsHash[oid].permission === 'Admin'){
+                                node.set('__permissionAdmin', true);
+                            }
+                        }
+                    });
+
+                    Ext.Array.each(removeNodes, function(rm){
+                        rm.remove();
+                    });
+                    console.log('node', removeNodes);
+                    deferred.resolve(store);
+                }
+
+
+            },
+            failure: function(msg){}
+        });
+
+        return deferred.promise;
+    },
+    _fetchCollection: function(userRecord, collectionName){
+        var deferred = Ext.create('Deft.Deferred');
+
+        userRecord.getCollection(collectionName).load({
+            callback: function(records, operation, success) {
+                deferred.resolve(records);
+            }
+        });
+
+        return deferred;
+    },
 });

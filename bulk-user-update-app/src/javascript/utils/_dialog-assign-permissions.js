@@ -17,26 +17,17 @@ Ext.define('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',
             text: 'Viewer',
             dataIndex: '__permissionViewer',
             align: 'center',
-            renderer: function(v,m,r){
-                var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
-                return tpl.apply(v);
-            }
+            renderer: this.toggleRenderer
         },{
             text: 'Editor',
             dataIndex: '__permissionEditor',
             align: 'center',
-            renderer: function(v,m,r){
-                var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
-                return tpl.apply(v);
-            }
+            renderer: this.toggleRenderer
         },{
             text: 'Admin',
             dataIndex: '__permissionAdmin',
             align: 'center',
-            renderer: function(v,m,r){
-                var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
-                return tpl.apply(v);
-            }
+            renderer: this.toggleRenderer
         }];
     }
 

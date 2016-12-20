@@ -10,6 +10,7 @@ Ext.define("bulk-user-update-app", {
 
     launch: function() {
 
+        this.setLoading();
         CA.technicalservices.userutilities.ProjectUtility.initialize(this.getContext()).then({
             success: function(){
                 this._addBoxes();
@@ -20,7 +21,7 @@ Ext.define("bulk-user-update-app", {
             },
             failure: this.showErrorNotification,
             scope: this
-        });
+        }).always(function(){ this.setLoading(false);}, this);
 
     },
 
@@ -63,26 +64,26 @@ Ext.define("bulk-user-update-app", {
             }
         });
 
-        this.getPermissionsFilterBox().add({
-            xtype: 'tsworkspacepermissionsearchfield',
-            fieldLabel: 'Show Users in Workspace',
-            labelWidth: 150,
-            width: 400,
-            listeners: {
-                filterusers: this.updateGridFilters,
-                scope: this
-            }
-        });
-        this.getPermissionsFilterBox().add({
-            xtype: 'tsprojectpermissionsearchfield',
-            fieldLabel: 'Show Users in Project',
-            labelWidth: 150,
-            width: 400,
-            listeners: {
-                filterusers: this.updateGridFilters,
-                scope: this
-            }
-        });
+        //this.getPermissionsFilterBox().add({
+        //    xtype: 'tsworkspacepermissionsearchfield',
+        //    fieldLabel: 'Show Users in Workspace',
+        //    labelWidth: 150,
+        //    width: 400,
+        //    listeners: {
+        //        filterusers: this.updateGridFilters,
+        //        scope: this
+        //    }
+        //});
+        //this.getPermissionsFilterBox().add({
+        //    xtype: 'tsprojectpermissionsearchfield',
+        //    fieldLabel: 'Show Users in Project',
+        //    labelWidth: 150,
+        //    width: 400,
+        //    listeners: {
+        //        filterusers: this.updateGridFilters,
+        //        scope: this
+        //    }
+        //});
 
     },
     addListFilterPanel: function(panel){
@@ -93,6 +94,7 @@ Ext.define("bulk-user-update-app", {
         this.getGrid().reconfigureWithColumns(fields);
     },
     updateGridFilters: function(filter){
+        this.logger.log('updateGridFilters', filter);
         this.getSelectorBox().doLayout();
         this.buildGrid();
     },
@@ -159,6 +161,11 @@ Ext.define("bulk-user-update-app", {
             storeConfig: {
                 filters: this.getFilters(),
                 enablePostGet: true
+            },
+            listeners: {
+                showprojectpermissions: function(){
+                    console.log('showprojectpermissions event');
+                }
             }
         });
         this.getGridBox().add(grid);

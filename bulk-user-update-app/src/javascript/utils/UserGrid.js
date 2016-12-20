@@ -28,11 +28,33 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
                 xtype: 'teammembershipbulkmenuitem'
             }]
         },
+        rowActionColumnConfig: {
+            rowActionsFn: function (record) {
+                return [
+                    {
+                        xtype: 'rallyrecordmenuitemedit',
+                        record: record
+                    },
+                    {
+                        xtype: 'viewpermissionsrecordmenuitem',
+                        record: record,
+                        listeners: {
+                            showprojectpermissions: function(){
+                                console.log('showprojectpermissions in menu', this);
+                                this.fireEvent('showprojectpermissions');
+                            },
+                            scope: this
+                        }
+                    }
+                ];
+            }
+        },
         showPagingToolbar: true,
         pagingToolbarCfg: {
             pageSizes: [200, 1000, 1500, 2000]
         }
     },
+
     constructor: function(config) {
         this.mergeConfig(config);
         this.callParent(arguments);
