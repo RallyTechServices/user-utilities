@@ -40,7 +40,6 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
                         record: record,
                         listeners: {
                             showprojectpermissions: function(){
-                                console.log('showprojectpermissions in menu', this);
                                 this.fireEvent('showprojectpermissions');
                             },
                             scope: this
@@ -57,6 +56,9 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
 
     constructor: function(config) {
         this.mergeConfig(config);
+        this.callParent(arguments);
+    },
+    initComponent: function(config) {
         this.callParent(arguments);
     }
 });

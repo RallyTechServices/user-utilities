@@ -9,9 +9,8 @@ Ext.define('CA.technicalservices.userutilities.ProjectGrid',{
 
     columns: [],
 
-    initComponent: function() {
-
-        this.callParent();
+    constructor: function(config) {
+        this.mergeConfig(config);
+        this.callParent(arguments);
     }
-
 });
