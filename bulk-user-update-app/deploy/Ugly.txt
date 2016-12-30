@@ -3,10 +3,10 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Mon Dec 19 2016 20:23:40 GMT-0700 (MST) -->
+    <!--  Build Date: Fri Dec 30 2016 09:06:04 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Mon Dec 19 2016 20:23:40 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Fri Dec 30 2016 09:06:04 GMT-0700 (MST)";
         var CHECKSUM = [%= checksum %];
     </script>
     
@@ -82,17 +82,78 @@
     top:0px;
     right: 0px!important;
     width: 100px;
+    background-color: #f6f6f6;
+
+}
+
+.rally-grid {
+    font-size: 14pt;
+    font-family: NotoSans, Helvetica, Arial;
 }
 
 .x-resizable-over {
-    border-left: 12px  solid #16a2e0;
     border-radius: 0px;
     box-shadow: none;
     top:0px;
     right: 0px!important;
     width: 100px;
 }
-.x-resizable-handle-west {}
+
+.x-resizable-over .x-resizable-handle-east,
+.x-resizable-over .x-resizable-handle-north,
+.x-resizable-over .x-resizable-handle-northwest,
+.x-resizable-over .x-resizable-handle-northeast,
+.x-resizable-over .x-resizable-handle-west,
+.x-resizable-over .x-resizable-handle-south,
+.x-resizable-over .x-resizable-handle-southwest,
+.x-resizable-over .x-resizable-handle-southeast,
+.x-resizable-pinned .x-resizable-handle-north,
+.x-resizable-pinned .x-resizable-handle-northwest,
+.x-resizable-pinned .x-resizable-handle-east,
+.x-resizable-pinned .x-resizable-handle-south,
+.x-resizable-pinned .x-resizable-handle-southwest,
+.x-resizable-pinned .x-resizable-handle-southeast,
+.x-resizable-pinned .x-resizable-handle-northeast,
+.x-resizable-pinned .x-resizable-handle-west {
+    background-image: none;
+    cursor: col-resize;
+
+}
+
+.x-resizable-handle-west {
+    width: 8px;
+}
+
+.view-permissions-title {
+    display: inline-block;
+    font-family: ProximaNovaBold,helvetica,sans-serif;
+    font-size: 14px;
+    margin: 0;
+    line-height: 3.2rem;
+}
+.view-permissions-icon {
+    font-size: 18px;
+    vertical-align: text-top;
+    color: #a9a9a9;
+    margin-right: .3rem;
+    margin-left: .3rem;
+}
+.view-permissions-close {
+    color: #a9a9a9;
+    background-color: transparent;
+    font-size: 18px;
+}
+
+#view-permissions-grid .x-tree-node-text{
+    cursor: default;
+    color: red;
+    font-family: ProximaNovaLight, Helvetica, Arial;
+    font-size: 13px!important;
+    padding: 4px 2px;
+    white-space: normal;
+    word-wrap: break-word;
+}
+
     </style>
 
 </head>

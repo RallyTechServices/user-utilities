@@ -43,7 +43,6 @@ Ext.define("bulk-user-update-app", {
             modelNames: ['User'],
             context: this.getContext(),
             margin: '10 5 10 5',
-
             stateful: true,
             stateId: 'grid-filters-3',
             listeners: {
@@ -63,28 +62,6 @@ Ext.define("bulk-user-update-app", {
                 listupdated: this.updateGridFilters
             }
         });
-
-        //this.getPermissionsFilterBox().add({
-        //    xtype: 'tsworkspacepermissionsearchfield',
-        //    fieldLabel: 'Show Users in Workspace',
-        //    labelWidth: 150,
-        //    width: 400,
-        //    listeners: {
-        //        filterusers: this.updateGridFilters,
-        //        scope: this
-        //    }
-        //});
-        //this.getPermissionsFilterBox().add({
-        //    xtype: 'tsprojectpermissionsearchfield',
-        //    fieldLabel: 'Show Users in Project',
-        //    labelWidth: 150,
-        //    width: 400,
-        //    listeners: {
-        //        filterusers: this.updateGridFilters,
-        //        scope: this
-        //    }
-        //});
-
     },
     addListFilterPanel: function(panel){
         this.getListFilterBox().add(panel);
@@ -156,9 +133,12 @@ Ext.define("bulk-user-update-app", {
     buildGrid: function(){
         this.getGridBox().removeAll();
 
+        var fields = this.down('fieldpickerbutton').getFields() || undefined;
+        var me = this;
         var grid = Ext.create('CA.technicalservices.userutilities.UserGrid',{
-            columnCfgs: this.down('fieldpickerbutton').getFields() || undefined,
+            columnCfgs: fields,
             storeConfig: {
+                fetch: fields.concat(['Disabled','SubscriptionAdmin']),
                 filters: this.getFilters(),
                 enablePostGet: true
             },
