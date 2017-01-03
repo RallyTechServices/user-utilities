@@ -48,17 +48,7 @@
     cursor:pointer;
 }
 
-.view-permissions {
-    position: absolute;
-    border-left: 8px  solid #16a2e0;
-    border-radius: 0px;
-    box-shadow: none;
-    top:0px;
-    right: 0px!important;
-    width: 100px;
-    background-color: #f6f6f6;
 
-}
 
 .rally-grid {
     font-size: 14pt;
@@ -91,6 +81,7 @@
 .x-resizable-pinned .x-resizable-handle-west {
     background-image: none;
     cursor: col-resize;
+    background-color:#f6f6f6;
 
 }
 
@@ -98,12 +89,48 @@
     width: 8px;
 }
 
+.view-permissions {
+    position: absolute;
+    border-left: 8px  solid #16a2e0;
+    box-shadow: none;
+    top:0px;
+    right: 0px!important;
+    width: 100px;
+}
+
+.view-permissions .x-panel-body {
+    border-right: 0px;
+    border-bottom: 0px;
+    border-radius: 0px;
+    background-color: #f6f6f6;
+}
+
+.view-permissions-title-header {
+    border-bottom-width: 1px;
+    border-bottom-color: silver;
+    background-color:#f6f6f6;
+}
 .view-permissions-title {
     display: inline-block;
     font-family: ProximaNovaBold,helvetica,sans-serif;
     font-size: 14px;
     margin: 0;
     line-height: 3.2rem;
+}
+.view-permissions-subtitle {
+    font-family: NotoSans,helvetica,sans-serif;
+    font-size: 14px;
+    color:#222;
+    line-height: 14px;
+    text-align: left;
+    padding-top: 25px;
+    padding-left: 10px;
+}
+.view-permissions-subtitle-icon {
+    color: #222;
+    font-size: 14px;
+    margin-right: .3rem;
+    margin-left: .3rem;
 }
 .view-permissions-icon {
     font-size: 18px;
@@ -112,18 +139,42 @@
     margin-right: .3rem;
     margin-left: .3rem;
 }
+
+
 .view-permissions-close {
     color: #a9a9a9;
     background-color: transparent;
     font-size: 18px;
+    vertical-align: top;
+    text-align: right;
 }
-
-#view-permissions-grid .x-tree-node-text{
+.view-permissions-grid {
+    border-right: 0px white!important;
+    border-left: 0px white!important;
+}
+.view-permissions-grid .x-grid-cell-inner-treecolumn,
+.view-permissions-grid .x-grid-cell-inner{
     cursor: default;
-    color: red;
-    font-family: ProximaNovaLight, Helvetica, Arial;
-    font-size: 13px!important;
+    font-family: ProximaNova, Helvetica, sans-serif!important;
+    font-size: 14px!important;
     padding: 4px 2px;
     white-space: normal;
     word-wrap: break-word;
+    background-color: white;
+    border-color: white!important;
+    border: none!important;
+
+}
+
+.view-permissions-grid-no-access .x-grid-cell-inner-treecolumn{
+    color: #888;
+}
+
+.view-permissions-grid .x-column-header {
+    font-size: 12px!important;
+    background-color: #f6f6f6;
+}
+.view-permissions-grid .x-column-header-text {
+    font-size: 12px!important;
+    background-color: #f6f6f6;
 }

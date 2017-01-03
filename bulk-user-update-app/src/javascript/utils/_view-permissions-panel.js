@@ -20,10 +20,15 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         this.mergeConfig(config);
         this.record = config.record;
 
-        var html = Ext.String.format('<span class="view-permissions-title"><div class="view-permissions-title"><span class="view-permissions-icon icon-user"></span><a  class="view-permissions-title" href="/#/detail/user/{0}" target="_blank">{1}</a></div></span>', this.record.get('ObjectID'), this.record.get('UserName'));
+        var html = Ext.String.format('<span class="view-permissions-title"><div class="view-permissions-title"><span class="view-permissions-icon icon-user"></span><a  class="view-permissions-title" href="/#/detail/user/{0}" target="_blank">{1}</a></div></span>',
+            this.record.get('ObjectID'),
+            this.record.get('UserName'),
+            CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspaceName()
+        );
         this.closable = false;
         this.header = {
             layout: 'hbox',
+            cls: 'view-permissions-title-header',
             items: [{
                 xtype: 'container',
                 html: html,
@@ -49,10 +54,10 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         this.callParent(arguments);
     },
     initComponent: function(){
-        var message =  CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspaceName() + ' Workspace';
+        var message =  CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspaceName();
         this.items = [{
             xtype: 'container',
-            html: '<div class="no-data-container"><div class="secondary-message">' + message + '</div></div>'
+            html: '<div class="view-permissions-subtitle"><span class="icon-workspace view-permissions-subtitle-icon"></span>' + message + '</div>'
         }];
 
         this.callParent(arguments);
@@ -64,9 +69,10 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     itemId: 'view-permissions-grid',
                     workspace: null,
                     store: store,
-                    cls: 'rally-grid',
+                    cls: 'rally-grid view-permissions-grid',
                     columns: this._getColumnCfgs(),
                     collapsed: false,
+                    disableSelection: true,
                     viewConfig: {
                         emptyText: this.emptyText
                     },
@@ -135,7 +141,7 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     CA.technicalservices.userutilities.ProjectUtility._fetchCollection(userRecord, 'UserPermissions'),
                     CA.technicalservices.userutilities.ProjectUtility._fetchCollection(userRecord, 'TeamMemberships')
                 ];
-
+                this.setLoading(true);
                 Deft.Promise.all(promises).then({
                     success: function(results){
                         var teamMembership = results[1],
@@ -178,6 +184,7 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                             permissionsHash[oid].teamMember = true;
                         });
 
+
                         if (isWorkspaceAdmin){
                             this.emptyText = Ext.String.format("{0} is a Workspace Administrator in the {1} Workspace", userRecord.get('_refObjectName'),CA.technicalservices.userutilities.ProjectUtility.currentWorkspaceName);
                             deferred.resolve(Ext.create('Ext.data.TreeStore', {
@@ -208,37 +215,41 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                                 model: 'CA.technicalservices.userutilities.ProjectModel'
                             });
 
-                            var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
-                                removeNodes = [];
+                            this._processRelevantNodes(store, permissionsHash);
 
-                            store.getRootNode().cascadeBy(function(node){
-                                var oid = node.get('ObjectID');
-                                if (!Ext.Array.contains(projects, oid)){
-                                    removeNodes.push(node);
-                                } else {
-                                    if (permissionsHash[oid].teamMember){
-                                        node.set('__teamMember', true);
-                                    }
-                                    if (permissionsHash[oid].permission === 'Viewer'){
-                                        node.set('__permissionViewer', true);
-                                    }
-                                    if (permissionsHash[oid].permission === 'Editor'){
-                                        node.set('__permissionEditor', true);
-                                    }
-                                    if (permissionsHash[oid].permission === 'Admin'){
-                                        node.set('__permissionAdmin', true);
-                                    }
-                                }
-                            });
-
-                            Ext.Array.each(removeNodes, function(rm){
-                                rm.remove();
-                            });
+                            //var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
+                            //    removeNodes = [];
+                            //
+                            //
+                            //store.getRootNode().cascadeBy(function(node){
+                            //    var oid = node.get('ObjectID');
+                            //    console.log('oid', projects, oid);
+                            //    if (!Ext.Array.contains(projects, oid)){
+                            //        console.log('removing oid', oid);
+                            //        removeNodes.push(node);
+                            //    } else {
+                            //        if (permissionsHash[oid].teamMember){
+                            //            node.set('__teamMember', true);
+                            //        }
+                            //        if (permissionsHash[oid].permission === 'Viewer'){
+                            //            node.set('__permissionViewer', true);
+                            //        }
+                            //        if (permissionsHash[oid].permission === 'Editor'){
+                            //            node.set('__permissionEditor', true);
+                            //        }
+                            //        if (permissionsHash[oid].permission === 'Admin'){
+                            //            node.set('__permissionAdmin', true);
+                            //        }
+                            //    }
+                            //});
+                            //
+                            //Ext.Array.each(removeNodes, function(rm){
+                            //    rm.remove();
+                            //});
                             if (store.getRootNode().hasChildNodes()){
                                 store.getRootNode().expand(true);
                             } else {
                                 this.emptyText = Ext.String.format("{0} has no Project Permissions in the {1} workspace", userRecord.get('_refObjectName'),CA.technicalservices.userutilities.ProjectUtility.currentWorkspaceName);
-
                             }
                             deferred.resolve(store);
                         }
@@ -256,9 +267,47 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                         }));
                     },
                     scope: this
-                });
+                }).always(function(){ this.setLoading(false); },this);
             }
             return deferred.promise;
+    },
+    _processRelevantNodes: function(store, permissionsHash){
+        var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
+            removeNodes = [],
+            parentNodes = [];
+
+        store.getRootNode().cascadeBy(function(node){
+            var oid = node.get('ObjectID');
+            if (!Ext.Array.contains(projects, oid)){
+
+                removeNodes.push(node);
+            } else {
+
+                var parents = node.getPath('ObjectID',',').split(',');
+                parentNodes = Ext.Array.merge(parentNodes, parents);
+
+                if (permissionsHash[oid].teamMember){
+                    node.set('__teamMember', true);
+                }
+                if (permissionsHash[oid].permission === 'Viewer'){
+                    node.set('__permissionViewer', true);
+                }
+                if (permissionsHash[oid].permission === 'Editor'){
+                    node.set('__permissionEditor', true);
+                }
+                if (permissionsHash[oid].permission === 'Admin'){
+                    node.set('__permissionAdmin', true);
+                }
+            }
+        });
+        parentNodes = Ext.Array.map(parentNodes, function(p){ return Number(p); });
+        console.log('parentNodes', parentNodes);
+
+        Ext.Array.each(removeNodes, function(rm){
+            if (!Ext.Array.contains(parentNodes, rm.get('ObjectID'))){
+                rm.remove();
+            }
+        });
     },
     _getColumnCfgs: function(){
 
@@ -267,9 +316,11 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
             text: 'Project',
             menuDisabled: true,
             dataIndex: 'Name',
-            flex: 1
+            flex: 1,
+            renderer: this.treeColumnRenderer
         },{
             text: 'Permission',
+            menuDisabled: true,
             dataIndex: '__permissionViewer',
             align: 'center',
             renderer: this.permissionRenderer
@@ -277,12 +328,22 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
             text: 'Team Member',
             dataIndex: '__teamMember',
             align: 'center',
+            menuDisabled: true,
             renderer: this.teamMemberRenderer
         }];
 
     },
+    treeColumnRenderer: function(v,m,r){
+        if (r.get('__permissionViewer') || r.get('__permissionEditor') || r.get('__permissionAdmin') || r.get('__teamMember')){
+            m.tdCls = "view-permissions-grid";
+        } else {
+            m.tdCls = "view-permissions-grid-no-access";
+        }
 
+        return v;
+    },
     permissionRenderer: function(v,m,r){
+        m.tdCls = "view-permissions-grid";
         if (r.get('__permissionViewer')){
             return 'Viewer';
         }
@@ -292,9 +353,12 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         if (r.get('__permissionAdmin')){
             return 'Admin';
         }
+        //This is a parent node and the user has no access to the project.
+        m.tdCls = "view-permissions-grid-no-access";
         return '';
     },
     teamMemberRenderer: function(v, m, r){
+        m.tdCls = "view-permissions-grid";
         if (v){
             return '<div class="icon-ok"></div>';
         }
