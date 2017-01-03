@@ -17,7 +17,7 @@ Ext.define('CA.technicalservices.userutilities.recordmenu.ViewPermissions', {
          * This is called when a menu item is clicked
          */
         handler: function () {
-            var dialogWidth = 600,
+            var dialogWidth = Rally.getApp().getWidth() * .75,
                 width = Rally.getApp().getWidth(),
                 height = Rally.getApp().getHeight();
 
