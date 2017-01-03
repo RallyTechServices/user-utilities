@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Jan 03 2017 11:05:09 GMT-0700 (MST) -->
+    <!--  Build Date: Tue Jan 03 2017 10:59:50 GMT-0800 (PST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Jan 03 2017 11:05:09 GMT-0700 (MST)";
-        var BUILDER = "kcorkan";
-        var CHECKSUM = 259896497140;
+        var APP_BUILD_DATE = "Tue Jan 03 2017 10:59:50 GMT-0800 (PST)";
+        var BUILDER = "jmartin";
+        var CHECKSUM = 260623263280;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -1974,12 +1974,17 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
     },
     fetchFilters: function(cb, record){
 
+        console.log('here');
+        
         var workspace = CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace(),
             projectID = this.getValue();
         console.log('fetchFilters', cb, projectID);
         var promises = [
             this._fetchProjectPermissions(workspace)
         ];
+        
+        var old_filters = this.filters;
+        
         this.filters = null;
         Deft.Promise.all(promises).then({
             success: function(results){
@@ -2008,6 +2013,7 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
                 }
                 this.filters = filters;
                 this.fireEvent('select', this, record);
+                this.fireEvent('change', this, old_filters, this.filters);
                 //this.fireEvent('filterusers',record); //filters);
             },
             scope: this

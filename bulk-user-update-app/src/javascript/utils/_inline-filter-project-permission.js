@@ -45,12 +45,17 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
     },
     fetchFilters: function(cb, record){
 
+        console.log('here');
+        
         var workspace = CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace(),
             projectID = this.getValue();
         console.log('fetchFilters', cb, projectID);
         var promises = [
             this._fetchProjectPermissions(workspace)
         ];
+        
+        var old_filters = this.filters;
+        
         this.filters = null;
         Deft.Promise.all(promises).then({
             success: function(results){
@@ -79,6 +84,7 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
                 }
                 this.filters = filters;
                 this.fireEvent('select', this, record);
+                this.fireEvent('change', this, old_filters, this.filters);
                 //this.fireEvent('filterusers',record); //filters);
             },
             scope: this
