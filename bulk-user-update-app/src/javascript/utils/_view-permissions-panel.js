@@ -75,8 +75,7 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     disableSelection: true,
                     viewConfig: {
                         emptyText: this.emptyText
-                    },
-                    height: 300
+                    }
                 });
 
                 this._addGrid(grid);
