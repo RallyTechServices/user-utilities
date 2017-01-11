@@ -201,13 +201,14 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
         var promises = [],
             me = this;
+
         Ext.Array.each(rootProjectData, function(rpd){
             promises.push(function(){
                 return CA.technicalservices.userutilities.ProjectUtility._updatePermissionRootProject(userOid,rpd.rootProjectOID,rpd.excludedProjectOIDs,permission,forceDowngrade);
             })
         });
 
-        Deft.Chain.parallel(promises).then({
+        Deft.Chain.sequence(promises).then({
             success: function(results){
                 deferred.resolve(results);
             }
@@ -428,7 +429,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
                         permissionsHash[oid].teamMember = true;
                     });
 
-                    console.log('fetchUserPermissions', permissionsHash);
                     if (isWorkspaceAdmin){
                         deferred.resolve(Ext.String.format("{0} is a Workspace Administrator in the {1} Workspace", userRecord.get('_refObjectName'),CA.technicalservices.userutilities.ProjectUtility.currentWorkspaceName));
                     } else if (Ext.Object.isEmpty(permissionsHash)){
@@ -449,6 +449,7 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
                         store.getRootNode().cascadeBy(function(node){
                             var oid = node.get('ObjectID');
+                            console.log('oid',oid);
                             if (!Ext.Array.contains(projects, oid)){
                                 removeNodes.push(node);
                             } else {
