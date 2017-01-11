@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 11 2017 14:51:49 GMT-0700 (MST) -->
+    <!--  Build Date: Wed Jan 11 2017 15:01:03 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 11 2017 14:51:49 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Wed Jan 11 2017 15:01:03 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 259627981939;
+        var CHECKSUM = 259653735461;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -2518,7 +2518,6 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
 
         this._buildViewPermissionStore(this.record).then({
             success: function(store){
-                console.log('emptyText', this.emptyText, store);
                 var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
                     itemId: 'view-permissions-grid',
                     workspace: null,
@@ -2529,7 +2528,9 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     disableSelection: true,
                     viewConfig: {
                         emptyText: this.emptyText
-                    }
+                    },
+                    autoScroll: true,
+                    height: Math.max(this.height - 100, 300)
                 });
 
                 this._addGrid(grid);
