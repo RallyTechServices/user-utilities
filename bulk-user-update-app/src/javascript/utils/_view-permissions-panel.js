@@ -64,7 +64,6 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
 
         this._buildViewPermissionStore(this.record).then({
             success: function(store){
-                console.log('emptyText', this.emptyText, store);
                 var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
                     itemId: 'view-permissions-grid',
                     workspace: null,
@@ -76,7 +75,8 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     viewConfig: {
                         emptyText: this.emptyText
                     },
-                    height: 300
+                    autoScroll: true,
+                    height: Math.max(this.height - 100, 300)
                 });
 
                 this._addGrid(grid);
