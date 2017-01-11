@@ -31,6 +31,8 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             });
 
             var records = this.records;
+            console.log('this', this);
+           this.setLoading('Updating Permissions...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -61,19 +63,16 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                         this.onSuccess(successfulRecords, unsuccessfulRecords,null,errorMessages);
                     } else {
                         if (errorMessages.length > 0){
-                            console.log('errormessages', errorMessages);
                             Rally.ui.notify.Notifier.showError({message: "0 Users were updated:<br/>" + errorMessages.join('<br/>')});
                         }
                     }
                     //this.onActionComplete(successfulRecords, unsuccessfulRecords);
                     if (errorMessages.length > 0){
-                        console.log('errormessages', errorMessages);
                         Rally.ui.notify.Notifier.showError({message: errorMessages.join(',')});
                     }
-
                 },
                 scope: this
-            });
+            }).always(function(){ this.setLoading(false);}, this);
 
 
         },
