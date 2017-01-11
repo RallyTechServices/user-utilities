@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Jan 03 2017 10:59:50 GMT-0800 (PST) -->
+    <!--  Build Date: Wed Jan 11 2017 13:53:48 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Jan 03 2017 10:59:50 GMT-0800 (PST)";
-        var BUILDER = "jmartin";
-        var CHECKSUM = 260623263280;
+        var APP_BUILD_DATE = "Wed Jan 11 2017 13:53:48 GMT-0700 (MST)";
+        var BUILDER = "kcorkan";
+        var CHECKSUM = 259449606549;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -240,7 +240,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
                     Ext.Array.each(records, function(user){
                         var success = false;
                         Ext.Object.each(selectionCache, function(permissionKey, projects){
-                            console.log('results', user.get('ObjectID'), permissionKey, results[idx]);
                             if (results[idx] && results[idx].success === true){
                                 success = true;
                             } else {
@@ -1065,13 +1064,14 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
         var promises = [],
             me = this;
+
         Ext.Array.each(rootProjectData, function(rpd){
             promises.push(function(){
                 return CA.technicalservices.userutilities.ProjectUtility._updatePermissionRootProject(userOid,rpd.rootProjectOID,rpd.excludedProjectOIDs,permission,forceDowngrade);
             })
         });
 
-        Deft.Chain.parallel(promises).then({
+        Deft.Chain.sequence(promises).then({
             success: function(results){
                 deferred.resolve(results);
             }
@@ -1292,7 +1292,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
                         permissionsHash[oid].teamMember = true;
                     });
 
-                    console.log('fetchUserPermissions', permissionsHash);
                     if (isWorkspaceAdmin){
                         deferred.resolve(Ext.String.format("{0} is a Workspace Administrator in the {1} Workspace", userRecord.get('_refObjectName'),CA.technicalservices.userutilities.ProjectUtility.currentWorkspaceName));
                     } else if (Ext.Object.isEmpty(permissionsHash)){
@@ -1313,6 +1312,7 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
 
                         store.getRootNode().cascadeBy(function(node){
                             var oid = node.get('ObjectID');
+                            console.log('oid',oid);
                             if (!Ext.Array.contains(projects, oid)){
                                 removeNodes.push(node);
                             } else {
@@ -3122,12 +3122,6 @@ Ext.define("bulk-user-update-app", {
     cursor:pointer;
 }
 
-
-
-.rally-grid {
-    font-size: 14pt;
-    font-family: NotoSans, Helvetica, Arial;
-}
 
 .x-resizable-over {
     border-radius: 0px;

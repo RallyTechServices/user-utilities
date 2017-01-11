@@ -39,7 +39,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
                     Ext.Array.each(records, function(user){
                         var success = false;
                         Ext.Object.each(selectionCache, function(permissionKey, projects){
-                            console.log('results', user.get('ObjectID'), permissionKey, results[idx]);
                             if (results[idx] && results[idx].success === true){
                                 success = true;
                             } else {
