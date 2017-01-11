@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 11 2017 13:53:48 GMT-0700 (MST) -->
+    <!--  Build Date: Wed Jan 11 2017 14:48:02 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 11 2017 13:53:48 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Wed Jan 11 2017 14:48:02 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 259449606549;
+        var CHECKSUM = 259695407770;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -49,6 +49,8 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             });
 
             var records = this.records;
+            console.log('this', this);
+           this.setLoading('Updating Permissions...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -79,19 +81,16 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                         this.onSuccess(successfulRecords, unsuccessfulRecords,null,errorMessages);
                     } else {
                         if (errorMessages.length > 0){
-                            console.log('errormessages', errorMessages);
                             Rally.ui.notify.Notifier.showError({message: "0 Users were updated:<br/>" + errorMessages.join('<br/>')});
                         }
                     }
                     //this.onActionComplete(successfulRecords, unsuccessfulRecords);
                     if (errorMessages.length > 0){
-                        console.log('errormessages', errorMessages);
                         Rally.ui.notify.Notifier.showError({message: errorMessages.join(',')});
                     }
-
                 },
                 scope: this
-            });
+            }).always(function(){ this.setLoading(false);}, this);
 
 
         },
@@ -133,7 +132,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
 
         },
         removePermissions: function(dlg, selectionCache){
-            var successfulRecords = this.records,
+            var successfulRecords = [],
                 unsuccessfulRecords = [];
 
             var promises = [];
@@ -226,6 +225,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
             Ext.Array.each(this.records, function(r){
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
+                    console.log('team membership', projects);
                     promises.push(
                         function(){ return CA.technicalservices.userutilities.ProjectUtility.addTeamMembership(user,projects); });
                 });
@@ -1524,10 +1524,9 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
     },
     updateRecordChildrenField: function(record, value, fieldName){
         var children = record.childNodes || [];
-
         Ext.Array.each(children, function(child){
             child.set(fieldName, value);
-            this.updateCache(fieldName, record.get('ObjectID'), value);
+            this.updateCache(fieldName, child.get('ObjectID'), value);
             this.updateRecordChildrenField(child, value);
         }, this);
     },
@@ -1550,6 +1549,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             }
             this.selectedCache[fieldName].push(oid);
         }
+
     },
     updateRecordChildrenPermissions: function(record, clickedDataIndex, value){
         var children = record.childNodes || [];
@@ -1582,7 +1582,6 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 dataIndex: '__permissionViewer',
                 align: 'center',
                 renderer: function(v,m,r){
-                    console.log('record', r);
                     var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
                     return tpl.apply(v);
                 }

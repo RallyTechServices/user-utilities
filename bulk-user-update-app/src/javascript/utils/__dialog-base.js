@@ -94,10 +94,9 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
     },
     updateRecordChildrenField: function(record, value, fieldName){
         var children = record.childNodes || [];
-
         Ext.Array.each(children, function(child){
             child.set(fieldName, value);
-            this.updateCache(fieldName, record.get('ObjectID'), value);
+            this.updateCache(fieldName, child.get('ObjectID'), value);
             this.updateRecordChildrenField(child, value);
         }, this);
     },
@@ -120,6 +119,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             }
             this.selectedCache[fieldName].push(oid);
         }
+
     },
     updateRecordChildrenPermissions: function(record, clickedDataIndex, value){
         var children = record.childNodes || [];
@@ -152,7 +152,6 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 dataIndex: '__permissionViewer',
                 align: 'center',
                 renderer: function(v,m,r){
-                    console.log('record', r);
                     var tpl = Ext.create('Rally.ui.renderer.template.ToggleButtonTemplate');
                     return tpl.apply(v);
                 }

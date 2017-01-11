@@ -25,6 +25,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
             Ext.Array.each(this.records, function(r){
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
+                    console.log('team membership', projects);
                     promises.push(
                         function(){ return CA.technicalservices.userutilities.ProjectUtility.addTeamMembership(user,projects); });
                 });

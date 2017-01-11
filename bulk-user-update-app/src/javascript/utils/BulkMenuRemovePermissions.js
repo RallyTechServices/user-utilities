@@ -18,7 +18,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
 
         },
         removePermissions: function(dlg, selectionCache){
-            var successfulRecords = this.records,
+            var successfulRecords = [],
                 unsuccessfulRecords = [];
 
             var promises = [];
