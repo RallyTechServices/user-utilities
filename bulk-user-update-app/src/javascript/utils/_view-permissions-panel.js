@@ -61,9 +61,9 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         }];
 
         this.callParent(arguments);
-
         this._buildViewPermissionStore(this.record).then({
             success: function(store){
+                console.log('this.emptyText', this.emptyText);
                 var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
                     itemId: 'view-permissions-grid',
                     workspace: null,
@@ -113,7 +113,6 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
             var deferred = Ext.create('Deft.Deferred');
 
             this.emptyText = null;
-
             if (userRecord.get('Disabled')){
                 this.emptyText = 'The user ' + userRecord.get("UserName") + ' is disabled.';
                 deferred.resolve(Ext.create('Ext.data.TreeStore', {

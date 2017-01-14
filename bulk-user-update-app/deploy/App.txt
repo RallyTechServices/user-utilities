@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Wed Jan 11 2017 15:01:03 GMT-0700 (MST) -->
+    <!--  Build Date: Sat Jan 14 2017 07:29:22 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Wed Jan 11 2017 15:01:03 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Sat Jan 14 2017 07:29:22 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 259653735461;
+        var CHECKSUM = 259970532757;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -2515,9 +2515,9 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         }];
 
         this.callParent(arguments);
-
         this._buildViewPermissionStore(this.record).then({
             success: function(store){
+                console.log('this.emptyText', this.emptyText);
                 var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
                     itemId: 'view-permissions-grid',
                     workspace: null,
@@ -2567,7 +2567,6 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
             var deferred = Ext.create('Deft.Deferred');
 
             this.emptyText = null;
-
             if (userRecord.get('Disabled')){
                 this.emptyText = 'The user ' + userRecord.get("UserName") + ' is disabled.';
                 deferred.resolve(Ext.create('Ext.data.TreeStore', {
