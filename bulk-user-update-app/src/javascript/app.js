@@ -12,12 +12,16 @@ Ext.define("bulk-user-update-app", {
 
         this.setLoading();
         CA.technicalservices.userutilities.ProjectUtility.initialize(this.getContext()).then({
-            success: function(){
-                this._addBoxes();
+            success: function(isAdmin){
+                if (isAdmin){
+                    this._addBoxes();
 
-                this._addSelectorComponents();
+                    this._addSelectorComponents();
 
-                this.buildGrid();
+                    this.buildGrid();
+                } else {
+                    this._addMessageToApp("Project Admin (or higher) privileges for the current workspace are required to run this app.");
+                }
             },
             failure: this.showErrorNotification,
             scope: this

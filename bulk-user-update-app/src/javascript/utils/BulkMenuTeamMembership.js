@@ -6,7 +6,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
         text: 'Assign Team Membership...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.updateTeamMembership, this);
         },
         predicate: function (records) {
