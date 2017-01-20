@@ -6,7 +6,6 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
     autoShow: true,
     draggable: true,
     width: 800,
-    height: 400,
     closable: true,
     items: [],
 
@@ -31,7 +30,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                     cls: 'primary rly-small',
                     userAction: 'clicked apply in dialog',
                     handler: function() {
-                        me.fireEvent('updated', me, me.selectedCache || {});
+                        me.fireEvent('updated', me, me.selectedCache || {}, this.getOverwrite());
                         me.close();
                         me.destroy();
                     },
@@ -48,6 +47,19 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             ]
         });
 
+        if (this.goText === "Assign"){
+            this.add({
+                xtype: 'rallycheckboxfield',
+                padding: 15,
+                fieldLabel: '',
+                itemId: 'overwritePermissions',
+                boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
+            });
+        }
+
+
+
+
         this.projectGrid= Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
             workspace: null,
             height: 300,
@@ -57,9 +69,13 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 cellclick: this.updateToggles,
                 scope: this
             },
-            store: this._createStore()
+            store: this._createStore(),
+            autoScroll: true
         });
         this.add(this.projectGrid);
+    },
+    getOverwrite: function(){
+        return this.down('#overwritePermissions') && this.down('#overwritePermissions').getValue() || false;
     },
     updateToggles: function(view, cell, cellIndex,record){
         var clickedDataIndex = view.panel.headerCt.getHeaderAtIndex(cellIndex).dataIndex;
@@ -197,9 +213,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 }
             }]);
         }
-
         return columns;
-
     },
     _createStore: function(records){
 

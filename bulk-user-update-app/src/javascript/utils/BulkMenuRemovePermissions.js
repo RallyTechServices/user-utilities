@@ -6,7 +6,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
         text: 'Remove Permissions...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.RemovePermissions',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.RemovePermissions',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.removePermissions, this);
         },
         predicate: function (records) {

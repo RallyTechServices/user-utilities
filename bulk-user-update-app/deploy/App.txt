@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Sat Jan 14 2017 07:29:22 GMT-0700 (MST) -->
+    <!--  Build Date: Fri Jan 20 2017 13:55:21 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Sat Jan 14 2017 07:29:22 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Fri Jan 20 2017 13:55:21 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 259970532757;
+        var CHECKSUM = 270345705362;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -24,7 +24,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
         text: 'Assign Permissions...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.assignPermissions, this);
         },
         predicate: function (records) {
@@ -35,7 +41,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             });
         },
 
-        assignPermissions: function(dlg, selectionCache){
+        assignPermissions: function(dlg, selectionCache, overwrite){
             var successfulRecords = [],
                 unsuccessfulRecords = [];
 
@@ -44,12 +50,12 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
                     var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
+                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite); });
                 });
             });
 
             var records = this.records;
-            console.log('this', this);
+
            this.setLoading('Updating Permissions...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
@@ -58,7 +64,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                     Ext.Array.each(records, function(user){
                         var success = false;
                         Ext.Object.each(selectionCache, function(permissionKey, projects){
-                            console.log('results', user.get('ObjectID'), permissionKey, results[idx][0]);
+
                             if (results[idx] && results[idx][0].success === true){
                                 success = true;
                             } else {
@@ -120,7 +126,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
         text: 'Remove Permissions...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.RemovePermissions',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.RemovePermissions',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.removePermissions, this);
         },
         predicate: function (records) {
@@ -206,7 +218,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
         text: 'Assign Team Membership...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.TeamMembership',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.updateTeamMembership, this);
         },
         predicate: function (records) {
@@ -884,7 +902,13 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
             success: function(results){
                 CA.technicalservices.userutilities.ProjectUtility.initializeRecords(results[0]);
                 CA.technicalservices.userutilities.ProjectUtility.allWorkspaces = results[1];
-                deferred.resolve();
+
+                var isAdmin = CA.technicalservices.userutilities.ProjectUtility.isSubAdmin ||
+                        Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces,
+                            CA.technicalservices.userutilities.ProjectUtility.currentWorkspace) ||
+                    CA.technicalservices.userutilities.ProjectUtility.allowedProjects.length > 0;
+
+                deferred.resolve(isAdmin);
             },
             failure: function(msg){
                 deferred.reject(msg);
@@ -938,7 +962,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
                     projects.push(projectOid);
                 }
             }
-            console.log('permissions', permission);
         });
         CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces = workspaces;
         CA.technicalservices.userutilities.ProjectUtility.isSubAdmin = subAdmin;
@@ -1003,7 +1026,23 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         }).load({
             callback: function(records, operation){
                 if (operation.wasSuccessful()){
-                    deferred.resolve(records);
+                    //todo - parse out projects that the user is a project admin or higher to or
+                    //projects that are parents to that
+                    var isWorkspaceAdmin = Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces,
+                            CA.technicalservices.userutilities.ProjectUtility.currentWorkspace ),
+                        isSubAdmin=  CA.technicalservices.userutilities.ProjectUtility.isSubAdmin;
+
+                    if (isWorkspaceAdmin || isSubAdmin){
+                        deferred.resolve(records);
+                    } else {
+                        var allowedRecords = [];
+                       Ext.Array.each(records, function(p){
+                           if (Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedProjects, p.get('ObjectID'))){
+                               allowedRecords.push(p);
+                           }
+                       });
+                       deferred.resolve(allowedRecords);
+                    }
                 } else {
                     deferred.reject("Error loading project structure for workspace " + workspaceOid + ": " + operation.error.errors.join(','));
                 }
@@ -1024,7 +1063,7 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
             projectData.__projectHierarchy = CA.technicalservices.userutilities.ProjectUtility._buildProjectHierarchy(oid,hash);
             var parentID = projectData.Parent && projectData.Parent.ObjectID || null;
 
-            if (!parentID){
+            if (!parentID || !hash[parentID]){
                 rootProjects.push(projectData);
             } else {
                 var parentModel = hash[parentID];
@@ -1436,7 +1475,6 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
     autoShow: true,
     draggable: true,
     width: 800,
-    height: 400,
     closable: true,
     items: [],
 
@@ -1461,7 +1499,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                     cls: 'primary rly-small',
                     userAction: 'clicked apply in dialog',
                     handler: function() {
-                        me.fireEvent('updated', me, me.selectedCache || {});
+                        me.fireEvent('updated', me, me.selectedCache || {}, this.getOverwrite());
                         me.close();
                         me.destroy();
                     },
@@ -1478,6 +1516,19 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             ]
         });
 
+        if (this.goText === "Assign"){
+            this.add({
+                xtype: 'rallycheckboxfield',
+                padding: 15,
+                fieldLabel: '',
+                itemId: 'overwritePermissions',
+                boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
+            });
+        }
+
+
+
+
         this.projectGrid= Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
             workspace: null,
             height: 300,
@@ -1487,9 +1538,13 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 cellclick: this.updateToggles,
                 scope: this
             },
-            store: this._createStore()
+            store: this._createStore(),
+            autoScroll: true
         });
         this.add(this.projectGrid);
+    },
+    getOverwrite: function(){
+        return this.down('#overwritePermissions') && this.down('#overwritePermissions').getValue() || false;
     },
     updateToggles: function(view, cell, cellIndex,record){
         var clickedDataIndex = view.panel.headerCt.getHeaderAtIndex(cellIndex).dataIndex;
@@ -1627,9 +1682,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
                 }
             }]);
         }
-
         return columns;
-
     },
     _createStore: function(records){
 
@@ -1851,7 +1904,6 @@ Ext.define('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',
 
     title: 'Project Permissions',
     goText: "Assign",
-
 
     _getColumnCfgs: function(){
 
@@ -2474,6 +2526,11 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
         this.mergeConfig(config);
         this.record = config.record;
 
+        var height = Ext.getBody().getViewSize().height,
+            width = Ext.getBody().getViewSize().width;
+
+        this.width = width * 80;
+
         var html = Ext.String.format('<span class="view-permissions-title"><div class="view-permissions-title"><span class="view-permissions-icon icon-user"></span><a  class="view-permissions-title" href="/#/detail/user/{0}" target="_blank">{1}</a></div></span>',
             this.record.get('ObjectID'),
             this.record.get('UserName'),
@@ -2503,55 +2560,59 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                     scope: this
                 }
             }]
-        }
-
+        };
         this.callParent(arguments);
     },
     initComponent: function(){
         var message =  CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspaceName();
+
         this.items = [{
             xtype: 'container',
+            itemId: 'workspaceContainer',
             html: '<div class="view-permissions-subtitle"><span class="icon-workspace view-permissions-subtitle-icon"></span>' + message + '</div>'
         }];
 
         this.callParent(arguments);
+
         this._buildViewPermissionStore(this.record).then({
             success: function(store){
-                console.log('this.emptyText', this.emptyText);
-                var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
-                    itemId: 'view-permissions-grid',
-                    workspace: null,
-                    store: store,
-                    cls: 'rally-grid view-permissions-grid',
-                    columns: this._getColumnCfgs(),
-                    collapsed: false,
-                    disableSelection: true,
-                    viewConfig: {
-                        emptyText: this.emptyText
-                    },
-                    autoScroll: true,
-                    height: Math.max(this.height - 100, 300)
-                });
+                if (!this.rendered){
+                    this.on('afterrender', function(){
+                        this._buildGrid(store);
+                    }, this);
 
-                this._addGrid(grid);
+                } else {
+                    this._buildGrid(store);
+                }
 
             },
             scope: this
         });
     },
-    _addGrid: function(grid){
-        if (!this.rendered){
-            this.on('render', function(){ this._addGrid(grid); }, this);
-            return;
-        }
-
+    _buildGrid: function(store){
+        console.log('_buildGrid', this.rendered);
+        var msgBox = this.down('#workspaceContainer').getBox();
+        var gridHeight = this.height - (msgBox.top + msgBox.height) - 25;  //50 is for the padding
+        var grid = Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
+            itemId: 'view-permissions-grid',
+            workspace: null,
+            store: store,
+            cls: 'rally-grid view-permissions-grid',
+            columns: this._getColumnCfgs(),
+            disableSelection: true,
+            height: gridHeight,
+            viewConfig: {
+                emptyText: this.emptyText
+            },
+            autoScroll: true,
+            overflowY: 'auto'
+        });
         this.add(grid);
-
         if (this.emptyText){
-           this._updateEmptyText(grid);
+            this._updateEmptyText(grid);
         }
     },
-    _updateEmptyText: function(grid){
+     _updateEmptyText: function(grid){
         if (!grid.rendered){
             grid.on('afterrender', function(){ this._updateEmptyText(grid); }, this);
             return;
@@ -2668,39 +2729,9 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                                 model: 'CA.technicalservices.userutilities.ProjectModel'
                             });
 
-                            this._processRelevantNodes(store, permissionsHash);
-
-                            //var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
-                            //    removeNodes = [];
-                            //
-                            //
-                            //store.getRootNode().cascadeBy(function(node){
-                            //    var oid = node.get('ObjectID');
-                            //    console.log('oid', projects, oid);
-                            //    if (!Ext.Array.contains(projects, oid)){
-                            //        console.log('removing oid', oid);
-                            //        removeNodes.push(node);
-                            //    } else {
-                            //        if (permissionsHash[oid].teamMember){
-                            //            node.set('__teamMember', true);
-                            //        }
-                            //        if (permissionsHash[oid].permission === 'Viewer'){
-                            //            node.set('__permissionViewer', true);
-                            //        }
-                            //        if (permissionsHash[oid].permission === 'Editor'){
-                            //            node.set('__permissionEditor', true);
-                            //        }
-                            //        if (permissionsHash[oid].permission === 'Admin'){
-                            //            node.set('__permissionAdmin', true);
-                            //        }
-                            //    }
-                            //});
-                            //
-                            //Ext.Array.each(removeNodes, function(rm){
-                            //    rm.remove();
-                            //});
+                            var nodeCount = this._processRelevantNodes(store, permissionsHash);
                             if (store.getRootNode().hasChildNodes()){
-                                store.getRootNode().expand(true);
+                                store.getRootNode().expand(nodeCount < 400);
                             } else {
                                 this.emptyText = Ext.String.format("{0} has no Project Permissions in the {1} workspace", userRecord.get('_refObjectName'),CA.technicalservices.userutilities.ProjectUtility.currentWorkspaceName);
                             }
@@ -2727,17 +2758,17 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
     _processRelevantNodes: function(store, permissionsHash){
         var projects = _.map(Ext.Object.getKeys(permissionsHash), function(k){ return Number(k); }),
             removeNodes = [],
-            parentNodes = [];
+            parentNodes = [],
+            nodeCount = 0;
 
         store.getRootNode().cascadeBy(function(node){
             var oid = node.get('ObjectID');
             if (!Ext.Array.contains(projects, oid)){
-
                 removeNodes.push(node);
             } else {
 
                 var parents = node.getPath('ObjectID',',').split(',');
-                parentNodes = Ext.Array.merge(parentNodes, parents);
+                parentNodes = parentNodes.concat(parents);
 
                 if (permissionsHash[oid].teamMember){
                     node.set('__teamMember', true);
@@ -2751,16 +2782,20 @@ Ext.define('CA.technicalservices.userutilities.ViewPermissionsPanel',{
                 if (permissionsHash[oid].permission === 'Admin'){
                     node.set('__permissionAdmin', true);
                 }
+                nodeCount++;
             }
+
         });
         parentNodes = Ext.Array.map(parentNodes, function(p){ return Number(p); });
-        console.log('parentNodes', parentNodes);
 
         Ext.Array.each(removeNodes, function(rm){
             if (!Ext.Array.contains(parentNodes, rm.get('ObjectID'))){
                 rm.remove();
+            } else {
+                nodeCount++;
             }
         });
+        return nodeCount;
     },
     _getColumnCfgs: function(){
 
@@ -2833,12 +2868,16 @@ Ext.define("bulk-user-update-app", {
 
         this.setLoading();
         CA.technicalservices.userutilities.ProjectUtility.initialize(this.getContext()).then({
-            success: function(){
-                this._addBoxes();
+            success: function(isAdmin){
+                if (isAdmin){
+                    this._addBoxes();
 
-                this._addSelectorComponents();
+                    this._addSelectorComponents();
 
-                this.buildGrid();
+                    this.buildGrid();
+                } else {
+                    this._addMessageToApp("Project Admin (or higher) privileges for the current workspace are required to run this app.");
+                }
             },
             failure: this.showErrorNotification,
             scope: this

@@ -21,7 +21,13 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
             success: function(results){
                 CA.technicalservices.userutilities.ProjectUtility.initializeRecords(results[0]);
                 CA.technicalservices.userutilities.ProjectUtility.allWorkspaces = results[1];
-                deferred.resolve();
+
+                var isAdmin = CA.technicalservices.userutilities.ProjectUtility.isSubAdmin ||
+                        Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces,
+                            CA.technicalservices.userutilities.ProjectUtility.currentWorkspace) ||
+                    CA.technicalservices.userutilities.ProjectUtility.allowedProjects.length > 0;
+
+                deferred.resolve(isAdmin);
             },
             failure: function(msg){
                 deferred.reject(msg);
@@ -75,7 +81,6 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
                     projects.push(projectOid);
                 }
             }
-            console.log('permissions', permission);
         });
         CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces = workspaces;
         CA.technicalservices.userutilities.ProjectUtility.isSubAdmin = subAdmin;
@@ -140,7 +145,23 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
         }).load({
             callback: function(records, operation){
                 if (operation.wasSuccessful()){
-                    deferred.resolve(records);
+                    //todo - parse out projects that the user is a project admin or higher to or
+                    //projects that are parents to that
+                    var isWorkspaceAdmin = Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedWorkspaces,
+                            CA.technicalservices.userutilities.ProjectUtility.currentWorkspace ),
+                        isSubAdmin=  CA.technicalservices.userutilities.ProjectUtility.isSubAdmin;
+
+                    if (isWorkspaceAdmin || isSubAdmin){
+                        deferred.resolve(records);
+                    } else {
+                        var allowedRecords = [];
+                       Ext.Array.each(records, function(p){
+                           if (Ext.Array.contains(CA.technicalservices.userutilities.ProjectUtility.allowedProjects, p.get('ObjectID'))){
+                               allowedRecords.push(p);
+                           }
+                       });
+                       deferred.resolve(allowedRecords);
+                    }
                 } else {
                     deferred.reject("Error loading project structure for workspace " + workspaceOid + ": " + operation.error.errors.join(','));
                 }
@@ -161,7 +182,7 @@ Ext.define('CA.technicalservices.userutilities.ProjectUtility',{
             projectData.__projectHierarchy = CA.technicalservices.userutilities.ProjectUtility._buildProjectHierarchy(oid,hash);
             var parentID = projectData.Parent && projectData.Parent.ObjectID || null;
 
-            if (!parentID){
+            if (!parentID || !hash[parentID]){
                 rootProjects.push(projectData);
             } else {
                 var parentModel = hash[parentID];

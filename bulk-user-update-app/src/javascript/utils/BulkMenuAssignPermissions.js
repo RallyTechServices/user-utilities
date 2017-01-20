@@ -6,7 +6,13 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
         text: 'Assign Permissions...',
 
         handler: function () {
-            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',{});
+            var height = Ext.getBody().getViewSize().height,
+                width = Ext.getBody().getViewSize().width;
+            var dialog = Ext.create('CA.technicalservices.userutilities.dialog.AssignProjectPermissions',{
+                height: height,
+                width: width *.80
+            });
+            dialog.alignTo(Ext.getBody(), "t-t");
             dialog.on('updated', this.assignPermissions, this);
         },
         predicate: function (records) {
@@ -17,7 +23,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
             });
         },
 
-        assignPermissions: function(dlg, selectionCache){
+        assignPermissions: function(dlg, selectionCache, overwrite){
             var successfulRecords = [],
                 unsuccessfulRecords = [];
 
@@ -26,12 +32,12 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                 var user = r.get('ObjectID');
                 Ext.Object.each(selectionCache, function(permissionKey, projects){
                     var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects); });
+                    promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite); });
                 });
             });
 
             var records = this.records;
-            console.log('this', this);
+
            this.setLoading('Updating Permissions...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
@@ -40,7 +46,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                     Ext.Array.each(records, function(user){
                         var success = false;
                         Ext.Object.each(selectionCache, function(permissionKey, projects){
-                            console.log('results', user.get('ObjectID'), permissionKey, results[idx][0]);
+
                             if (results[idx] && results[idx][0].success === true){
                                 success = true;
                             } else {
