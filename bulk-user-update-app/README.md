@@ -1,4 +1,63 @@
-#Bulk User Update Utility
+BulkUserUtilityApp
+=========================
+
+## Overview
+This app is for bulk assigning user permissions, bulk removing user permissions and assigning team memberships.  
+
+##Filters 
+This app has 2 types of filters: 1.  The standard advanced filter and a user list filter. 
+
+The standard advanced filters are available for users in the grid.  
+[!ScreenShot](/images/advanced-filter.png)
+
+The advanced filter also includes a "Has Permissions in Project" Quick Filter that allows filtering all users that exist in the selected project: 
+[!ScreenShot](/images/project_permissions_filter.png)
+
+An additional User List Filter.  A delimited string of usernames can be pasted into this filter to filter out all users whose usernames match the ones in the list.  Delimiters can be commas, tabs or line feeds.  
+[!ScreenShot](/images/bulk-user-filter.png)
+
+
+##Features
+View permissions in the current workspace for any user by clicking the gear menu and select view permissions.  
+
+Assign or Remove permissions or Add Team Memberships in bulk by selecting the checkbox for 1 to many users and choosing the action.
+[!ScreenShot](/images/bulk-menu.png)
+
+
+##Notes 
+Permissions can only be assigned to projects within the workspace that the app is installed for.  
+
+This app will only run for Project Administrators in the current workspace, Workspace Administrators in the current workspace, and Subscription Administrators.  
+
+If a user is a Project Administrator, they will only be able to see other users' permissions for the projects that they are administrators of.  
+
+Permissions can only be updated for users who are not Workspace or Subscription administrators.  The bulk options will not be available if users who are Workspace or Subscription administrators are selected.  To prevent this, filter on only users who are Workspace Users (not Administrators).    
+
+
+##Updates: 
+2017-02-03
+Improve performance of "Has Permissions in Project" filter
+Expand Assign/Remove Permissions grid to full window 
+ 
+2017-01-20
+Added checkbox to downgrade existing project permissions (if less than what user currently has and user is not workspace or subscription administrator)
+Minor UI updates
+
+2017-01-11
+Minor UI updates
+Fixed issue updating hierarchy of Team Membership
+Fixed concurrency issue 
+
+
+## License
+
+BulkUserUtilityApp is released under the MIT license.  See the file [LICENSE](./LICENSE) for the full text.
+
+##Documentation for SDK
+
+You can find the documentation on our help [site.](https://help.rallydev.com/apps/2.1/doc/)
+
+
 
 ## Development Notes
 
