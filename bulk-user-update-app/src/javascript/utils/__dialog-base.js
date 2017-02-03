@@ -7,6 +7,7 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
     draggable: true,
     width: 800,
     closable: true,
+    layout: 'fit',
     items: [],
 
     beforeRender: function() {
@@ -47,22 +48,31 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             ]
         });
 
+
         if (this.goText === "Assign"){
-            this.add({
-                xtype: 'rallycheckboxfield',
-                padding: 15,
-                fieldLabel: '',
-                itemId: 'overwritePermissions',
-                boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
+            this.addDocked({
+                xtype: 'toolbar',
+                dock: 'top',
+                margin: 10,
+                layout: {
+                    type: 'hbox',
+                    pack: 'center'
+                },
+                ui: 'footer',
+                items: [
+                    {
+                        xtype: 'rallycheckboxfield',
+                        fieldLabel: '',
+                        height: 35,
+                        itemId: 'overwritePermissions',
+                        boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
+                    }
+                ]
             });
         }
 
-
-
-
         this.projectGrid= Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
             workspace: null,
-            height: 300,
             columns: this._getColumnCfgs(),
             itemId: 'project-grid',
             listeners: {
