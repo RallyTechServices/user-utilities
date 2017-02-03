@@ -45,50 +45,71 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
     },
     fetchFilters: function(cb, record){
 
-        console.log('here');
-        
         var workspace = CA.technicalservices.userutilities.ProjectUtility.getCurrentWorkspace(),
             projectID = this.getValue();
-        console.log('fetchFilters', cb, projectID);
-        var promises = [
-            this._fetchProjectPermissions(workspace)
-        ];
-        
+
+
         var old_filters = this.filters;
-        
+
         this.filters = null;
-        Deft.Promise.all(promises).then({
-            success: function(results){
-                var permissions = _.flatten(results);
+        this._fetchProjectPermissionsEndpoint(projectID).then({
+           success: function(permissions){
+               var filters = Ext.Array.map(permissions, function(p){
+                   return {
+                       property: 'ObjectUUID',
+                       value: p._refObjectUUID
+                   };
+               });
 
-                var filters = [{
-                    property: "SubscriptionPermission",
-                    value: "Subscription Admin"
-                },{ //note this is for current workspace only
-                    property: "WorkspacePermission",
-                    value: "Workspace Admin"
-                }];
-
-                Ext.Array.each(permissions, function(r){
-                    if ((r.get('Project') && r.get('Project').ObjectID === projectID) ||
-                         r.get('_type') === "user"){
-                        filters.push({
-                            property: 'ObjectID',
-                            value: r.get('User').ObjectID
-                        });
-                    }
-                });
-
-                if (filters.length > 1){
-                    filters = Rally.data.wsapi.Filter.or(filters);
-                }
-                this.filters = filters;
-                this.fireEvent('select', this, record);
-                this.fireEvent('change', this, old_filters, this.filters);
-                //this.fireEvent('filterusers',record); //filters);
-            },
+               if (filters.length > 1){
+                   filters = Rally.data.wsapi.Filter.or(filters);
+               }
+               this.filters = filters;
+               this.fireEvent('select', this, record);
+               this.fireEvent('change', this, old_filters, this.filters);
+           },
             scope: this
-        });
+       });
+
+        //Deft.Promise.all(promises).then({
+        //    success: function(results){
+        //        var permissions = _.flatten(results);
+        //
+        //        //var filters = [{
+        //        //    property: "SubscriptionPermission",
+        //        //    value: "Subscription Admin"
+        //        //},{ //note this is for current workspace only
+        //        //    property: "WorkspacePermission",
+        //        //    value: "Workspace Admin"
+        //        //}];
+        //
+        //        //Ext.Array.each(permissions, function(r){
+        //        //    if ((r.get('Project') && r.get('Project').ObjectID === projectID) ||
+        //        //         r.get('_type') === "user"){
+        //        //        console.log('permission', r.getData());
+        //        //        filters.push({
+        //        //            property: 'ObjectID',
+        //        //            value: r.get('User').ObjectID
+        //        //        });
+        //        //    }
+        //        //});
+        //
+        //        var filters = Ext.Array.map(permissions, function(p){
+        //            return {
+        //                property: 'ObjectUUID',
+        //                value: p._refObjectUUID
+        //            };
+        //        });
+        //
+        //        if (filters.length > 1){
+        //            filters = Rally.data.wsapi.Filter.or(filters);
+        //        }
+        //        this.filters = filters;
+        //        this.fireEvent('select', this, record);
+        //        this.fireEvent('change', this, old_filters, this.filters);
+        //    },
+        //    scope: this
+        //});
         return true;
     },
     getFilters: function(){
@@ -104,7 +125,6 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
 
         // Only react to selection if it is not called from setValue, and if our list is
         // expanded (ignores changes to the selection model triggered elsewhere)
-        console.log('onLIstSelectionChagne',list, selectedRecords);
         if (!me.ignoreSelection && me.isExpanded) {
             if (!isMulti) {
                 Ext.defer(me.collapse, 1, me);
@@ -140,6 +160,24 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
             },
             scope: this
         });
+        return deferred.promise;
+    },
+    _fetchProjectPermissionsEndpoint: function(project_oid){
+        var deferred = Ext.create('Deft.Deferred');
+
+        Ext.Ajax.request({
+            url: Ext.String.format("/slm/webservice/v2.0/project/{0}/projectusers",project_oid),
+            success: function(response){
+                if (response && response.responseText){
+                    var obj = Ext.JSON.decode(response.responseText);
+                    var users = obj.QueryResult && obj.QueryResult.Results || [];
+                    deferred.resolve(users);
+                } else {
+                    deferred.resolve([]);
+                }
+            }
+        });
+
         return deferred.promise;
     }
 });
