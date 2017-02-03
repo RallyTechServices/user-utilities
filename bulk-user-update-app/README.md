@@ -8,20 +8,20 @@ This app is for bulk assigning user permissions, bulk removing user permissions 
 This app has 2 types of filters: 1.  The standard advanced filter and a user list filter. 
 
 The standard advanced filters are available for users in the grid.  
-[!ScreenShot](/images/advanced-filter.png)
+![ScreenShot](/images/advanced-filter.png)
 
 The advanced filter also includes a "Has Permissions in Project" Quick Filter that allows filtering all users that exist in the selected project: 
-[!ScreenShot](/images/project_permissions_filter.png)
+![ScreenShot](/images/project_permissions_filter.png)
 
 An additional User List Filter.  A delimited string of usernames can be pasted into this filter to filter out all users whose usernames match the ones in the list.  Delimiters can be commas, tabs or line feeds.  
-[!ScreenShot](/images/bulk-user-filter.png)
+![ScreenShot](/images/bulk-user-filter.png)
 
 
 ##Features
 View permissions in the current workspace for any user by clicking the gear menu and select view permissions.  
 
 Assign or Remove permissions or Add Team Memberships in bulk by selecting the checkbox for 1 to many users and choosing the action.
-[!ScreenShot](/images/bulk-menu.png)
+![ScreenShot](/images/bulk-menu.png)
 
 
 ##Notes 
