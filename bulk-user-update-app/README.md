@@ -35,6 +35,11 @@ Permissions can only be updated for users who are not Workspace or Subscription 
 
 
 ##Updates: 
+
+2017-02-07 
+Fix bug in "Has Permissions in Project" filter where all permissions were not being retrieved.  
+Reduced page sizes to 200 or less.
+
 2017-02-03
 Improve performance of "Has Permissions in Project" filter
 Expand Assign/Remove Permissions grid to full window 
