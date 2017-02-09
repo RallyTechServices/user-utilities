@@ -55,61 +55,26 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
         this._fetchProjectPermissionsEndpoint(projectID).then({
            success: function(permissions){
                var filters = Ext.Array.map(permissions, function(p){
+                   var ar = p._ref.split('/');
+                   var objID = ar.slice(-1)[0];
+                   objID = Number(objID);
+
                    return {
-                       property: 'ObjectUUID',
-                       value: p._refObjectUUID
+                       property: 'ObjectID',
+                       value: objID
                    };
                });
 
                if (filters.length > 1){
                    filters = Rally.data.wsapi.Filter.or(filters);
                }
+
                this.filters = filters;
                this.fireEvent('select', this, record);
                this.fireEvent('change', this, old_filters, this.filters);
            },
             scope: this
        });
-
-        //Deft.Promise.all(promises).then({
-        //    success: function(results){
-        //        var permissions = _.flatten(results);
-        //
-        //        //var filters = [{
-        //        //    property: "SubscriptionPermission",
-        //        //    value: "Subscription Admin"
-        //        //},{ //note this is for current workspace only
-        //        //    property: "WorkspacePermission",
-        //        //    value: "Workspace Admin"
-        //        //}];
-        //
-        //        //Ext.Array.each(permissions, function(r){
-        //        //    if ((r.get('Project') && r.get('Project').ObjectID === projectID) ||
-        //        //         r.get('_type') === "user"){
-        //        //        console.log('permission', r.getData());
-        //        //        filters.push({
-        //        //            property: 'ObjectID',
-        //        //            value: r.get('User').ObjectID
-        //        //        });
-        //        //    }
-        //        //});
-        //
-        //        var filters = Ext.Array.map(permissions, function(p){
-        //            return {
-        //                property: 'ObjectUUID',
-        //                value: p._refObjectUUID
-        //            };
-        //        });
-        //
-        //        if (filters.length > 1){
-        //            filters = Rally.data.wsapi.Filter.or(filters);
-        //        }
-        //        this.filters = filters;
-        //        this.fireEvent('select', this, record);
-        //        this.fireEvent('change', this, old_filters, this.filters);
-        //    },
-        //    scope: this
-        //});
         return true;
     },
     getFilters: function(){
@@ -165,15 +130,53 @@ Ext.define('CA.agile.technicalservices.inlinefilter.UserPermissionInProject', {
     _fetchProjectPermissionsEndpoint: function(project_oid){
         var deferred = Ext.create('Deft.Deferred');
 
+        this._fetchProjectPermissionsPage(project_oid, 1,1).then({
+            success: function(obj){
+                if (!obj){
+                    deferred.resolve([]);
+                } else {
+
+                    var totalCount = obj.QueryResult && obj.QueryResult.TotalResultCount || 0,
+                        pageSize = 1000,
+                        promises = [];
+
+                    for (var i=0; i<totalCount; i += pageSize){
+                        var start = i+ 1;
+                        promises.push(this._fetchProjectPermissionsPage(project_oid, start, pageSize));
+                    }
+                    Deft.Promise.all(promises).then({
+                        success: function(results){
+                            var users = [];
+                            Ext.Array.each(results, function(r){
+                                users = users.concat(r.QueryResult && r.QueryResult.Results || []);
+                            });
+                            deferred.resolve(users);
+                        }
+                    });
+                }
+            },
+            scope: this
+        });
+        return deferred.promise;
+    },
+    _fetchProjectPermissionsPage: function(project_oid, startindex, pagesize){
+        var deferred = Ext.create('Deft.Deferred');
+
+        if (!startindex){
+            startindex = 1;
+        }
+        if (!pagesize){
+            pagesize = 2000;
+        }
+
         Ext.Ajax.request({
-            url: Ext.String.format("/slm/webservice/v2.0/project/{0}/projectusers",project_oid),
+            url: Ext.String.format("/slm/webservice/v2.0/project/{0}/projectusers?start={2}&pagesize={1}",project_oid, pagesize, startindex),
             success: function(response){
                 if (response && response.responseText){
                     var obj = Ext.JSON.decode(response.responseText);
-                    var users = obj.QueryResult && obj.QueryResult.Results || [];
-                    deferred.resolve(users);
+                    deferred.resolve(obj);
                 } else {
-                    deferred.resolve([]);
+                    deferred.resolve(null);
                 }
             }
         });
