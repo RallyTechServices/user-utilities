@@ -50,7 +50,7 @@ Ext.define('CA.technicalservices.userutilities.UserGrid',{
         },
         showPagingToolbar: true,
         pagingToolbarCfg: {
-            pageSizes: [200, 1000, 1500, 2000]
+            pageSizes: [25, 50, 100, 200]
         }
     },
 
