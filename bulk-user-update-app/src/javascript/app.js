@@ -1,6 +1,9 @@
 Ext.define("bulk-user-update-app", {
     extend: 'Rally.app.App',
     componentCls: 'app',
+
+    layout: 'border',
+
     logger: new Rally.technicalservices.Logger(),
     defaults: { margin: 10 },
 
@@ -66,6 +69,10 @@ Ext.define("bulk-user-update-app", {
                 listupdated: this.updateGridFilters
             }
         });
+    },
+    updateStatus: function(msg){
+        console.log('this', this, msg);
+        this.setLoading(msg);
     },
     addListFilterPanel: function(panel){
         this.getListFilterBox().add(panel);
@@ -138,7 +145,6 @@ Ext.define("bulk-user-update-app", {
         this.getGridBox().removeAll();
 
         var fields = this.down('fieldpickerbutton').getFields() || undefined;
-        var me = this;
         var grid = Ext.create('CA.technicalservices.userutilities.UserGrid',{
             columnCfgs: fields,
             storeConfig: {
@@ -146,46 +152,38 @@ Ext.define("bulk-user-update-app", {
                 filters: this.getFilters(),
                 enablePostGet: true
             },
-            listeners: {
-                showprojectpermissions: function(){
-                    console.log('showprojectpermissions event');
-                }
-            }
+            autoScroll: true
         });
+
         this.getGridBox().add(grid);
     },
     _addBoxes: function(){
         this.removeAll();
 
-        //if (!this.allowedWorkspaces || this.allowedWorkspaces.length === 0){
-        //    this._addMessageToApp("Workspace Admin or higher privileges are required to assign user permissions.");
-        //    return;
-        //}
-        //
-        //if (!Ext.Array.contains(this.allowedWorkspaces, this.getContext().getWorkspace().ObjectID)){
-        //    this._addMessageToApp("Workspace Admin privileges for the currently selected workspace are required to assign bulk user permissions.");
-        //    return;
-        //}
+        var northBox = this.add({
+            xtype:'container',
+            region: 'north'
+        });
 
-        this.add({
+        northBox.add({
             xtype: 'container',
             itemId: 'selectorBox',
             layout: 'hbox'
         });
-        this.add({
+        northBox.add({
             xtype:'container',
             itemId: 'permissionsFilterBox',
             layout: 'hbox'
 
         });
 
-        this.add({
+        northBox.add({
             xtype:'container',
             itemId: 'advancedFilterBox',
             flex: 1
         });
 
-        this.add({
+        northBox.add({
             xtype:'container',
             itemId: 'listFilterBox',
             flex: 1
@@ -193,7 +191,9 @@ Ext.define("bulk-user-update-app", {
 
         this.add({
             xtype:'container',
-            itemId: 'gridBox'
+            itemId: 'gridBox',
+            region: 'center',
+            layout: 'fit'
         });
     },
     _addMessageToApp: function(message){
