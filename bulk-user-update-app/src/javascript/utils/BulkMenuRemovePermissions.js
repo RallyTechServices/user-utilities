@@ -38,6 +38,8 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
             });
 
             var records = this.records;
+
+            Rally.getApp().setLoading('Removing permissions for ' + records.length + ' Users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -45,7 +47,6 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
                     Ext.Array.each(records, function(user){
                         var success = false;
                         Ext.Object.each(selectionCache, function(permissionKey, projects){
-                            console.log('results', user.get('ObjectID'), permissionKey, results[idx][0]);
                             if (results[idx] && results[idx][0].success === true){
                                 success = true;
                             } else {
@@ -68,7 +69,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
                     }
                 },
                 scope: this
-            });
+            }).always(function(){ Rally.getApp().setLoading(false); });
 
 
         },

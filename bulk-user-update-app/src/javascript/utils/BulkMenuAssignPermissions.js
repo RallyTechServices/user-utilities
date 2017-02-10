@@ -38,7 +38,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
 
             var records = this.records;
 
-           this.setLoading('Updating Permissions...');
+            Rally.getApp().setLoading('Updating ' + records.length + ' permissions...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -64,7 +64,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                         }
 
                     });
-                    console.log('records', successfulRecords, unsuccessfulRecords);
+
                     if (successfulRecords.length > 0){
                         this.onSuccess(successfulRecords, unsuccessfulRecords,null,errorMessages);
                     } else {
@@ -78,7 +78,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
                     }
                 },
                 scope: this
-            }).always(function(){ this.setLoading(false);}, this);
+            }).always(function(){ Rally.getApp().setLoading(false);}, this);
 
 
         },

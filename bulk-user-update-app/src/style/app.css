@@ -16,6 +16,10 @@
     cursor: pointer;
 }
 
+.x-border-layout-ct {
+    background-color: #fff;
+}
+
 .permission-selected {
     background-color: #00a9e0;
     color: #fff;
