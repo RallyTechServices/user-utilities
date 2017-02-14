@@ -71,7 +71,6 @@ Ext.define("bulk-user-update-app", {
         });
     },
     updateStatus: function(msg){
-        console.log('this', this, msg);
         this.setLoading(msg);
     },
     addListFilterPanel: function(panel){
@@ -107,13 +106,11 @@ Ext.define("bulk-user-update-app", {
         // var advancedFilters = this.down('rallyinlinefilterbutton').getWsapiFilter();
         var filterButton = this.down('rallyinlinefilterbutton');
         if (filterButton && filterButton.inlineFilterPanel && filterButton.getWsapiFilter()){
-            console.log('advancedfilters', filterButton.getWsapiFilter(), filterButton.getFilters());
             if (filters){
                 filters = filters.and(filterButton.getWsapiFilter());
             } else {
                 filters = filterButton.getWsapiFilter();
             }
-
         }
 
         var workspacePermissionsFilter = this.down('tsworkspacepermissionsearchfield');
@@ -148,13 +145,12 @@ Ext.define("bulk-user-update-app", {
         var grid = Ext.create('CA.technicalservices.userutilities.UserGrid',{
             columnCfgs: fields,
             storeConfig: {
-                fetch: fields.concat(['Disabled','SubscriptionAdmin']),
+                fetch: fields.concat(['Disabled','SubscriptionAdmin','WorkspacePermission']),
                 filters: this.getFilters(),
                 enablePostGet: true
             },
             autoScroll: true
         });
-
         this.getGridBox().add(grid);
     },
     _addBoxes: function(){
@@ -233,12 +229,10 @@ Ext.define("bulk-user-update-app", {
             }
         ];
     },
-    
     _launchInfo: function() {
         if ( this.about_dialog ) { this.about_dialog.destroy(); }
         this.about_dialog = Ext.create('Rally.technicalservices.InfoLink',{});
     },
-    
     isExternal: function(){
         return typeof(this.getAppId()) == 'undefined';
     }

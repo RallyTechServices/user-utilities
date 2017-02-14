@@ -1,7 +1,7 @@
 Ext.define('CA.technicalservices.userutilities.dialog.AssignProjectPermissions', {
     extend: 'CA.technicalservices.userutilities.dialog.ProjectPermissions',
 
-    title: 'Project Permissions',
+    title: 'Assign Project Permissions',
     goText: "Assign",
 
     _getColumnCfgs: function(){

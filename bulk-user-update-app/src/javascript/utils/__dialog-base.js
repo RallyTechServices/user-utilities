@@ -49,32 +49,60 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
         });
 
 
-        if (this.goText === "Assign"){
-            this.addDocked({
-                xtype: 'toolbar',
-                dock: 'top',
-                margin: 10,
-                layout: {
-                    type: 'hbox',
-                    pack: 'center'
-                },
-                ui: 'footer',
-                items: [
-                    {
-                        xtype: 'rallycheckboxfield',
-                        fieldLabel: '',
-                        height: 35,
-                        itemId: 'overwritePermissions',
-                        boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
-                    }
-                ]
+        var expandCollapseItems = [{
+            xtype: 'container',
+            layout: 'hbox',
+            items: [{
+                xtype: 'rallybutton',
+                iconCls: 'icon-plus',
+                toolTipText: 'Expand All',
+                handler: this._expandAll,
+                cls: 'expand-collapse rly-small',
+                padding: 5,
+                scope: this
+            },{
+                xtype: 'rallybutton',
+                iconCls: 'icon-minus',
+                toolTipText: 'Collapse All',
+                handler: this._collapseAll,
+                padding: 5,
+                cls: 'expand-collapse rly-small',
+                scope: this
+            }]
+        }];
+
+
+        if (this.title === "Assign Project Permissions"){
+            expandCollapseItems.unshift({
+                xtype: 'rallycheckboxfield',
+                fieldLabel: '',
+                height: 35,
+                padding: '5 5 20 5',
+                itemId: 'overwritePermissions',
+                boxLabel: 'Overwrite existing project permissions, even if the user has a permission with higher project privileges. If unchecked, project permissions with a higher privilege than the selected will not be overwritten.'
             });
         }
+
+        this.addDocked({
+            xtype: 'toolbar',
+            dock: 'top',
+            margin: 5,
+            layout: {
+                type: 'vbox',
+                //pack: 'center'
+            },
+            ui: 'footer',
+            items: expandCollapseItems
+        });
 
         this.projectGrid= Ext.create('CA.technicalservices.userutilities.ProjectGrid',{
             workspace: null,
             columns: this._getColumnCfgs(),
             itemId: 'project-grid',
+            cls: 'rally-grid no-padding',
+            style: {
+                paddingTop: 0
+            },
             listeners: {
                 cellclick: this.updateToggles,
                 scope: this
@@ -83,6 +111,16 @@ Ext.define('CA.technicalservices.userutilities.dialog.ProjectPermissions', {
             autoScroll: true
         });
         this.add(this.projectGrid);
+    },
+    _expandAll: function(){
+        if (this.projectGrid){
+            this.projectGrid.expandAll();
+        }
+    },
+    _collapseAll: function(){
+        if (this.projectGrid){
+            this.projectGrid.collapseAll();
+        }
     },
     getOverwrite: function(){
         return this.down('#overwritePermissions') && this.down('#overwritePermissions').getValue() || false;

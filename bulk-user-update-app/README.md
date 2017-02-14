@@ -13,7 +13,7 @@ The standard advanced filters are available for users in the grid.
 The advanced filter also includes a "Has Permissions in Project" Quick Filter that allows filtering all users that exist in the selected project: 
 ![ScreenShot](/images/project_permissions_filter.png)
 
-An additional User List Filter.  A delimited string of usernames can be pasted into this filter to filter out all users whose usernames match the ones in the list.  Delimiters can be commas, tabs or line feeds.  
+An additional User List Filter.  A delimited string of usernames can be pasted into this filter to filter out all users whose usernames match the ones in the list.  Delimiters can be commas, tabs or line feeds.  Up to 24,000 characters can be pasted into this text box.    
 ![ScreenShot](/images/bulk-user-filter.png)
 
 
@@ -32,6 +32,8 @@ This app will only run for Project Administrators in the current workspace, Work
 If a user is a Project Administrator, they will only be able to see other users' permissions for the projects that they are administrators of.  
 
 Permissions can only be updated for users who are not Workspace or Subscription administrators.  The bulk options will not be available if users who are Workspace or Subscription administrators are selected.  To prevent this, filter on only users who are Workspace Users (not Administrators).    
+
+Filters that use "=" are case sensitive.  If you want to do a non-case sensitive search on a text field, use the "contains" operator instead. 
 
 
 ##Updates: 

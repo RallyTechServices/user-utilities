@@ -86,7 +86,9 @@ Ext.define('CA.technicalservices.userutilities.ListFilterPanel', {
             fieldLabel: 'Filter UserNames:',
             height: 100,
             autoScroll: true,
-            value: users
+            value: users,
+            maxLength: 24000,
+            enforceMaxLength: true
         });
 
 
