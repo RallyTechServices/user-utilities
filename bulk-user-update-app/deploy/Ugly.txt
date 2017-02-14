@@ -3,10 +3,10 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Fri Feb 10 2017 09:09:15 GMT-0700 (MST) -->
+    <!--  Build Date: Tue Feb 14 2017 16:15:21 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Fri Feb 10 2017 09:09:15 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Tue Feb 14 2017 16:15:21 GMT-0700 (MST)";
         var CHECKSUM = [%= checksum %];
     </script>
     
@@ -202,6 +202,21 @@
     font-size: 12px!important;
     background-color: #f6f6f6;
 }
+
+.expand-collapse {
+    color: #888!important;
+    background-color: #fff;
+    background-image: none;
+    border-color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    overflow: visible!important;
+}
+
+.no-padding {
+    padding-top: 0px!important;
+}
+
     </style>
 
 </head>
