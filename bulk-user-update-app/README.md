@@ -35,8 +35,17 @@ Permissions can only be updated for users who are not Workspace or Subscription 
 
 Filters that use "=" are case sensitive.  If you want to do a non-case sensitive search on a text field, use the "contains" operator instead. 
 
+The username list will convert all usernames pasted in that box to lowercase since Rally saves usernames in lower case.  
+
+If a user is disabled, permissions or team membership will not be assigned to the user.  Permissions will be removed from the user, however.  
+
 
 ##Updates: 
+
+2017-03-06
+Added status updates during permission assignment/removal
+Updated code so that permissions can be removed from disabled users
+Made username list filter all lowercase
 
 2017-02-07 
 Fix bug in "Has Permissions in Project" filter where all permissions were not being retrieved.  
