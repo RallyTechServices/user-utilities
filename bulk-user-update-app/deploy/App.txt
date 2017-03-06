@@ -3,12 +3,12 @@
 <head>
     <title>Bulk User Update Utility</title>
     <!--  (c) 2016 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Tue Feb 14 2017 16:15:20 GMT-0700 (MST) -->
+    <!--  Build Date: Mon Mar 06 2017 15:23:12 GMT-0700 (MST) -->
     
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Tue Feb 14 2017 16:15:20 GMT-0700 (MST)";
+        var APP_BUILD_DATE = "Mon Mar 06 2017 15:23:12 GMT-0700 (MST)";
         var BUILDER = "kcorkan";
-        var CHECKSUM = 293494828964;
+        var CHECKSUM = 295921015242;
     </script>
     
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -54,26 +54,33 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
 
 
 
-            Ext.Array.each(allRecords, function(r){
-                var user = r.get('ObjectID');
+            Ext.Array.each(allRecords, function(r) {
                 var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
                     && r.get('WorkspacePermission') !== "Subscription Admin"
                     && r.get('Disabled') === false;
 
-                if (eligible){
+                if (eligible) {
                     eligibleUsers.push(r);
-                    Ext.Object.each(selectionCache, function(permissionKey, projects){
-                        var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                        promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite); });
-
-                    });
                 } else {
                     ineligibleUsers++;
                 }
+            });
+            var permissionTypes = Ext.Object.getKeys(selectionCache),
+                total = eligibleUsers.length * permissionTypes.length,
+                idx = 0;
 
+            Ext.Array.each(eligibleUsers, function(r){
+                var user = r.get('ObjectID');
+                Ext.Object.each(selectionCache, function(permissionKey, projects){
+                    var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
+                    promises.push(function(){
+                        Rally.getApp().setLoading("Assigning permission " + idx++ + " of " + total);
+                        return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite);
+                    });
+
+                });
             });
 
-            Rally.getApp().setLoading('Updating permissions for ' + eligibleUsers.length + ' users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -183,28 +190,32 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
                 ineligibleUsers = 0;
 
             var promises = [];
-            Ext.Array.each(this.records, function(r){
-                var user = r.get('ObjectID');
-                var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
-                    && r.get('WorkspacePermission') !== "Subscription Admin"
-                    && r.get('Disabled') === false;
 
-                if (eligible){
+
+
+            Ext.Array.each(this.records, function(r) {
+                var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
+                    && r.get('WorkspacePermission') !== "Subscription Admin";
+                if (eligible) {
                     eligibleUsers.push(r);
-                    Ext.Object.each(selectionCache, function(permissionKey, projects){
-                        var permission = "No Access";
-                        promises.push(
-                            function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, true); });
-                    });
                 } else {
                     ineligibleUsers++;
                 }
+            });
+            var total = eligibleUsers.length,
+                idx = 0;
+            Ext.Array.each(eligibleUsers, function(r){
+                    var user = r.get('ObjectID');
 
-
-
+                    Ext.Object.each(selectionCache, function(permissionKey, projects){
+                        var permission = "No Access";
+                        promises.push(
+                            function(){
+                                Rally.getApp().setLoading("Removing permissions " + idx++ + " of " + total);
+                                return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, true); });
+                    });
             });
 
-            Rally.getApp().setLoading('Removing permissions for ' +  eligibleUsers.length + ' Users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -299,27 +310,32 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
                 eligibleUsers = [],
                 ineligibleUsers = 0;
 
-            var promises = [];
-            Ext.Array.each(this.records, function(r){
-                var user = r.get('ObjectID');
+            Ext.Array.each(this.records, function(r) {
                 var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
                     && r.get('WorkspacePermission') !== "Subscription Admin"
                     && r.get('Disabled') === false;
 
-                if (eligible){
+                if (eligible) {
                     eligibleUsers.push(r);
-                    Ext.Object.each(selectionCache, function(permissionKey, projects){
-                        promises.push(
-                            function(){ return CA.technicalservices.userutilities.ProjectUtility.addTeamMembership(user,projects); });
-                    });
                 } else {
                     ineligibleUsers++;
                 }
+            });
+            var total = eligibleUsers.length,
+                idx = 0;
 
+            var promises = [];
+            Ext.Array.each(eligibleUsers, function(r){
+                var user = r.get('ObjectID');
+                Ext.Object.each(selectionCache, function(permissionKey, projects){
+                    promises.push(
+                        function(){
+                            Rally.getApp().setLoading("Assigning team membership " + idx++ + " of " + total);
+                            return CA.technicalservices.userutilities.ProjectUtility.addTeamMembership(user,projects);
+                        });
+                });
             });
 
-
-            Rally.getApp().setLoading('Assigning Team Membership for ' + eligibleUsers.length + ' Users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,
@@ -929,6 +945,7 @@ Ext.define('CA.technicalservices.userutilities.ListFilterPanel', {
         if (!listItems || listItems.length === 0){
             return [];
         }
+        listItems = listItems.toLowerCase();  //deal with the case issue, rally saves usernames in lowercase
         listItems = listItems.replace(/[,"\s]{1,}/g, ",");
         return listItems.split(',') || [];
     },
@@ -3058,9 +3075,7 @@ Ext.define("bulk-user-update-app", {
             failure: this.showErrorNotification,
             scope: this
         }).always(function(){ this.setLoading(false);}, this);
-
     },
-
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
 

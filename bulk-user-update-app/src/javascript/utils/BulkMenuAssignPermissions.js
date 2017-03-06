@@ -36,26 +36,33 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.AssignPermissions', {
 
 
 
-            Ext.Array.each(allRecords, function(r){
-                var user = r.get('ObjectID');
+            Ext.Array.each(allRecords, function(r) {
                 var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
                     && r.get('WorkspacePermission') !== "Subscription Admin"
                     && r.get('Disabled') === false;
 
-                if (eligible){
+                if (eligible) {
                     eligibleUsers.push(r);
-                    Ext.Object.each(selectionCache, function(permissionKey, projects){
-                        var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
-                        promises.push(function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite); });
-
-                    });
                 } else {
                     ineligibleUsers++;
                 }
+            });
+            var permissionTypes = Ext.Object.getKeys(selectionCache),
+                total = eligibleUsers.length * permissionTypes.length,
+                idx = 0;
 
+            Ext.Array.each(eligibleUsers, function(r){
+                var user = r.get('ObjectID');
+                Ext.Object.each(selectionCache, function(permissionKey, projects){
+                    var permission = CA.technicalservices.userutilities.ProjectUtility.getPermission(permissionKey);
+                    promises.push(function(){
+                        Rally.getApp().setLoading("Assigning permission " + idx++ + " of " + total);
+                        return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, overwrite);
+                    });
+
+                });
             });
 
-            Rally.getApp().setLoading('Updating permissions for ' + eligibleUsers.length + ' users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,

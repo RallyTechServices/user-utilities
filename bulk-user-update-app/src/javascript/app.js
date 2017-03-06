@@ -29,9 +29,7 @@ Ext.define("bulk-user-update-app", {
             failure: this.showErrorNotification,
             scope: this
         }).always(function(){ this.setLoading(false);}, this);
-
     },
-
     _addSelectorComponents: function(){
         this.getSelectorBox().removeAll();
 
