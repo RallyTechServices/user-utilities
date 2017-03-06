@@ -29,28 +29,32 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.RemovePermissions', {
                 ineligibleUsers = 0;
 
             var promises = [];
-            Ext.Array.each(this.records, function(r){
-                var user = r.get('ObjectID');
-                var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
-                    && r.get('WorkspacePermission') !== "Subscription Admin"
-                    && r.get('Disabled') === false;
 
-                if (eligible){
+
+
+            Ext.Array.each(this.records, function(r) {
+                var eligible = r.get('WorkspacePermission') !== "Workspace Admin"
+                    && r.get('WorkspacePermission') !== "Subscription Admin";
+                if (eligible) {
                     eligibleUsers.push(r);
-                    Ext.Object.each(selectionCache, function(permissionKey, projects){
-                        var permission = "No Access";
-                        promises.push(
-                            function(){ return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, true); });
-                    });
                 } else {
                     ineligibleUsers++;
                 }
+            });
+            var total = eligibleUsers.length,
+                idx = 0;
+            Ext.Array.each(eligibleUsers, function(r){
+                    var user = r.get('ObjectID');
 
-
-
+                    Ext.Object.each(selectionCache, function(permissionKey, projects){
+                        var permission = "No Access";
+                        promises.push(
+                            function(){
+                                Rally.getApp().setLoading("Removing permissions " + idx++ + " of " + total);
+                                return CA.technicalservices.userutilities.ProjectUtility.assignPermissions(user, permission,projects, true); });
+                    });
             });
 
-            Rally.getApp().setLoading('Removing permissions for ' +  eligibleUsers.length + ' Users...');
             Deft.Chain.sequence(promises).then({
                 success: function(results){
                     var idx = 0,

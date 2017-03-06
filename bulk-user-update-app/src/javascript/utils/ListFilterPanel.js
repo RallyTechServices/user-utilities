@@ -138,6 +138,7 @@ Ext.define('CA.technicalservices.userutilities.ListFilterPanel', {
         if (!listItems || listItems.length === 0){
             return [];
         }
+        listItems = listItems.toLowerCase();  //deal with the case issue, rally saves usernames in lowercase
         listItems = listItems.replace(/[,"\s]{1,}/g, ",");
         return listItems.split(',') || [];
     },
