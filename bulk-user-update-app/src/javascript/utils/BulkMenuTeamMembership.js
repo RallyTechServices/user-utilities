@@ -97,7 +97,7 @@ Ext.define('CA.technicalservices.userutilities.bulkmenu.TeamMembership', {
                 });
             } else {
                 if (ineligibleUsers){
-                    message = message + ".<br/><br/>" + ineligibleUsers + " user(s) were not updated becuase they were either disabled, Subscription Administrators or Workspace Administrators";
+                    message = message + ".<br/><br/>" + ineligibleUsers + " user(s) were not updated because they were either disabled, Subscription Administrators or Workspace Administrators";
                 }
 
                 if (unsuccessfulRecords.length > 0){
