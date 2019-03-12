@@ -4,7 +4,7 @@ BulkUserUtilityApp
 ## Overview
 This app is for bulk assigning user permissions, bulk removing user permissions and assigning team memberships.  
 
-##Filters 
+## Filters 
 This app has 2 types of filters: 1.  The standard advanced filter and a user list filter. 
 
 The standard advanced filters are available for users in the grid.  
@@ -17,14 +17,14 @@ An additional User List Filter.  A delimited string of usernames can be pasted i
 ![ScreenShot](/images/bulk-user-filter.png)
 
 
-##Features
+## Features
 View permissions in the current workspace for any user by clicking the gear menu and select view permissions.  
 
 Assign or Remove permissions or Add Team Memberships in bulk by selecting the checkbox for 1 to many users and choosing the action.
 ![ScreenShot](/images/bulk-menu.png)
 
 
-##Notes 
+## Notes 
 Permissions can only be assigned to projects within the workspace that the app is installed for.  
 
 This app will only run for Project Administrators in the current workspace, Workspace Administrators in the current workspace, and Subscription Administrators.  
@@ -40,7 +40,7 @@ The username list will convert all usernames pasted in that box to lowercase sin
 If a user is disabled, permissions or team membership will not be assigned to the user.  Permissions will be removed from the user, however.  
 
 
-##Updates: 
+## Updates: 
 
 2017-03-06
 Added status updates during permission assignment/removal
@@ -69,7 +69,7 @@ Fixed concurrency issue
 
 BulkUserUtilityApp is released under the MIT license.  See the file [LICENSE](./LICENSE) for the full text.
 
-##Documentation for SDK
+## Documentation for SDK
 
 You can find the documentation on our help [site.](https://help.rallydev.com/apps/2.1/doc/)
 
@@ -122,7 +122,7 @@ to get set up to develop:
     }
   
 ### Usage of the grunt file
-####Tasks
+#### Tasks
     
 ##### grunt debug
 
